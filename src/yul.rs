@@ -2,17 +2,17 @@ use std::fmt;
 
 #[derive(Hash,Clone,PartialEq,Debug)]
 pub struct Block {
-  statements: Vec<Statement>
+  pub statements: Vec<Statement>
 }
 
 #[derive(Hash,Clone,PartialEq,Debug)]
 pub struct Literal {
-  literal: String
+  pub literal: String
 }
 
 #[derive(Hash,Clone,PartialEq,Debug)]
 pub struct Identifier {
-  identifier: String
+  pub identifier: String
 }
 
 #[derive(Hash,Clone,PartialEq,Debug)]
@@ -24,8 +24,8 @@ pub enum Expression {
 
 #[derive(Hash,Clone,PartialEq,Debug)]
 pub struct Case {
-  literal: Literal,
-  block: Block
+  pub literal: Literal,
+  pub block: Block
 }
 
 #[derive(Hash,Clone,PartialEq,Debug)]
