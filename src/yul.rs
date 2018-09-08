@@ -61,11 +61,11 @@ impl fmt::Display for Expression {
             Expression::Literal(ref literal) => write!(f, "{}", literal),
             Expression::Identifier(ref identifier) => write!(f, "{}", identifier),
             Expression::FunctionCall(ref identifier, ref expressions) => {
-                write!(f, "{}(", identifier);
+                try!(write!(f, "{}(", identifier));
                 for (i, expression) in expressions.iter().enumerate() {
-                    write!(f, "{}", expression);
+                    try!(write!(f, "{}", expression));
                     if i < expressions.len() - 1 {
-                        write!(f, ",");
+                        try!(write!(f, ","));
                     }
                 }
                 write!(f, ")")
@@ -89,25 +89,25 @@ impl fmt::Display for Statement {
         match *self {
             Statement::Block(ref block) => write!(f, "{}", block),
             Statement::FunctionDefinition(ref identifier, ref parameters, ref returns, ref block) => {
-                write!(f, "function {}(", identifier);
+                try!(write!(f, "function {}(", identifier));
                 for (i, identifier) in parameters.iter().enumerate() {
-                    write!(f, "{}", identifier);
+                    try!(write!(f, "{}", identifier));
                     if i < parameters.len() - 1 {
-                        write!(f, ", ");
+                        try!(write!(f, ", "));
                     }
                 }
-                write!(f, ")");
+                try!(write!(f, ")"));
                 if returns.len() > 0 {
-                    write!(f, " -> (");
+                    try!(write!(f, " -> ("));
                     for (i, identifier) in returns.iter().enumerate() {
-                        write!(f, "{}", identifier);
+                        try!(write!(f, "{}", identifier));
                         if i < returns.len() - 1 {
-                            write!(f, ", ");
+                            try!(write!(f, ", "));
                         }
                     }
-                    write!(f, ") ");
+                    try!(write!(f, ") "));
                 } else {
-                    write!(f, " ");
+                    try!(write!(f, " "));
                 }
                 write!(f, "{}", block)
             },
@@ -115,11 +115,11 @@ impl fmt::Display for Statement {
                 if identifiers.len() == 0 {
                   panic!("VariableDeclaration must have identifiers")
                 }
-                write!(f, "let ");
+                try!(write!(f, "let "));
                 for (i, identifier) in identifiers.iter().enumerate() {
-                    write!(f, "{}", identifier);
+                    try!(write!(f, "{}", identifier));
                     if i < identifiers.len() - 1 {
-                        write!(f, ", ");
+                        try!(write!(f, ", "));
                     }
                 }
                 if let Some(expression) = expression {
@@ -133,9 +133,9 @@ impl fmt::Display for Statement {
                     panic!("Assignment must have identifiers")
                 }
                 for (i, identifier) in identifiers.iter().enumerate() {
-                    write!(f, "{}", identifier);
+                    try!(write!(f, "{}", identifier));
                     if i < identifiers.len() - 1 {
-                        write!(f, ", ");
+                        try!(write!(f, ", "));
                     }
                 }
                 write!(f, " := {}", expression)
@@ -151,9 +151,9 @@ impl fmt::Display for Statement {
 
 impl fmt::Display for Block {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{{");
-        for (i, statement) in self.statements.iter().enumerate() {
-            write!(f, " {}", statement);
+        try!(write!(f, "{{"));
+        for (_, statement) in self.statements.iter().enumerate() {
+            try!(write!(f, " {}", statement));
         }
         write!(f, " }}")
     }
