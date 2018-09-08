@@ -74,6 +74,16 @@ impl fmt::Display for Expression {
     }
 }
 
+impl fmt::Display for Case {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if self.literal.literal.len() == 0 {
+            write!(f, "default:")
+        } else {
+            write!(f, "case {}:", self.literal)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -97,5 +107,21 @@ mod tests {
         let args = vec!{Expression::Identifier(name.clone()), Expression::Literal(lit.clone())};
         let tmp = Expression::FunctionCall(name, args);
         assert_eq!(tmp.to_string(), "test(test,literal)");
+    }
+
+    #[test]
+    fn case() {
+        let block = Block{ statements: vec![] };
+        let lit = Literal{ literal: "literal".to_string() };
+        let tmp = Case{ literal: lit, block: block };
+        assert_eq!(tmp.to_string(), "case literal:");
+    }
+
+    #[test]
+    fn case_default() {
+        let block = Block{ statements: vec![] };
+        let lit = Literal{ literal: "".to_string() };
+        let tmp = Case{ literal: lit, block: block };
+        assert_eq!(tmp.to_string(), "default:");
     }
 }
