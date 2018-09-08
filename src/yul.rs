@@ -84,6 +84,29 @@ impl fmt::Display for Case {
     }
 }
 
+impl fmt::Display for Statement {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Statement::Block(ref block) => write!(f, "{}", block),
+            Statement::Expression(ref expression) => write!(f, "{}", expression),
+            Statement::If(ref expression, ref block) => write!(f, "if {} {}", expression, block),
+            Statement::Break => write!(f, "break"),
+            Statement::Continue => write!(f, "continue"),
+            _ => panic!()
+        }
+    }
+}
+
+impl fmt::Display for Block {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{{");
+        for (i, statement) in self.statements.iter().enumerate() {
+            write!(f, " {}", statement);
+        }
+        write!(f, " }}")
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -107,6 +130,36 @@ mod tests {
         let args = vec!{Expression::Identifier(name.clone()), Expression::Literal(lit.clone())};
         let tmp = Expression::FunctionCall(name, args);
         assert_eq!(tmp.to_string(), "test(test,literal)");
+    }
+
+    #[test]
+    fn if_statement() {
+        let lit = Literal{ literal: "literal".to_string() };
+        let exp = Expression::Literal(lit);
+        let block = Block{ statements: vec![] };
+        let tmp = Statement::If(exp, block);
+        assert_eq!(tmp.to_string(), "if literal { }");
+    }
+
+    #[test]
+    fn block_empty() {
+        let block = Block{ statements: vec![] };
+        assert_eq!(block.to_string(), "{ }");
+    }
+
+    #[test]
+    fn block_nested() {
+        let empty_block = Block{ statements: vec![] };
+        let block = Block{ statements: vec!{Statement::Block(empty_block)} };
+        assert_eq!(block.to_string(), "{ { } }");
+    }
+
+    #[test]
+    fn block_literal() {
+        let lit = Literal{ literal: "literal".to_string() };
+        let exp = Expression::Literal(lit);
+        let block = Block{ statements: vec!{Statement::Expression(exp)} };
+        assert_eq!(block.to_string(), "{ literal }");
     }
 
     #[test]
