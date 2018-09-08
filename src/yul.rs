@@ -88,6 +88,18 @@ impl fmt::Display for Statement {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Statement::Block(ref block) => write!(f, "{}", block),
+            Statement::Assignment(ref identifiers, ref expression) => {
+                if identifiers.len() == 0 {
+                    panic!("Assignment must have identifiers")
+                }
+                for (i, identifier) in identifiers.iter().enumerate() {
+                    write!(f, "{}", identifier);
+                    if i < identifiers.len() - 1 {
+                        write!(f, ", ");
+                    }
+                }
+                write!(f, " := {}", expression)
+            },
             Statement::Expression(ref expression) => write!(f, "{}", expression),
             Statement::If(ref expression, ref block) => write!(f, "if {} {}", expression, block),
             Statement::Break => write!(f, "break"),
@@ -160,6 +172,24 @@ mod tests {
         let exp = Expression::Literal(lit);
         let block = Block{ statements: vec!{Statement::Expression(exp)} };
         assert_eq!(block.to_string(), "{ literal }");
+    }
+
+    #[test]
+    fn assignment_single() {
+        let lit = Literal{ literal: "1".to_string() };
+        let exp = Expression::Literal(lit);
+        let name = Identifier{ identifier: "a".to_string() };
+        let tmp = Statement::Assignment(vec!{name}, exp);
+        assert_eq!(tmp.to_string(), "a := 1");
+    }
+
+    #[test]
+    fn assignment_multi() {
+        let lit = Literal{ literal: "1".to_string() };
+        let exp = Expression::Literal(lit);
+        let name = Identifier{ identifier: "a".to_string() };
+        let tmp = Statement::Assignment(vec!{name.clone(), name.clone(), name.clone()}, exp);
+        assert_eq!(tmp.to_string(), "a, a, a := 1");
     }
 
     #[test]
