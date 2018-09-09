@@ -43,6 +43,22 @@ pub enum Statement {
   Continue,
 }
 
+impl Identifier {
+    pub fn new(identifier: &str) -> Self {
+        Identifier {
+            identifier: identifier.to_string()
+        }
+    }
+}
+
+impl Literal {
+    pub fn new(literal: &str) -> Self {
+        Literal {
+            literal: literal.to_string()
+        }
+    }
+}
+
 impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.literal)
