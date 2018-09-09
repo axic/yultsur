@@ -114,18 +114,15 @@ impl fmt::Display for Statement {
                 }
                 try!(write!(f, ")"));
                 if returns.len() > 0 {
-                    try!(write!(f, " -> ("));
+                    try!(write!(f, " -> "));
                     for (i, identifier) in returns.iter().enumerate() {
                         try!(write!(f, "{}", identifier));
                         if i < returns.len() - 1 {
                             try!(write!(f, ", "));
                         }
                     }
-                    try!(write!(f, ") "));
-                } else {
-                    try!(write!(f, " "));
                 }
-                write!(f, "{}", block)
+                write!(f, " {}", block)
             },
             Statement::VariableDeclaration(ref identifiers, ref expression) => {
                 if identifiers.len() == 0 {
@@ -295,7 +292,7 @@ mod tests {
         let empty_block = Block{ statements: vec![] };
         let name = Identifier{ identifier: "name".to_string() };
         let tmp = Statement::FunctionDefinition(name.clone(), vec![], vec!{name.clone()}, empty_block);
-        assert_eq!(tmp.to_string(), "function name() -> (name) { }");
+        assert_eq!(tmp.to_string(), "function name() -> name { }");
     }
 
     #[test]
@@ -303,7 +300,7 @@ mod tests {
         let empty_block = Block{ statements: vec![] };
         let name = Identifier{ identifier: "name".to_string() };
         let tmp = Statement::FunctionDefinition(name.clone(), vec!{name.clone(), name.clone()}, vec!{name.clone(), name.clone()}, empty_block);
-        assert_eq!(tmp.to_string(), "function name(name, name) -> (name, name) { }");
+        assert_eq!(tmp.to_string(), "function name(name, name) -> name, name { }");
     }
 
     #[test]
