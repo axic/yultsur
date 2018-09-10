@@ -35,6 +35,12 @@ pub enum Expression {
 }
 
 #[derive(Hash,Clone,PartialEq,Debug)]
+pub struct If {
+  pub expression: Expression,
+  pub block: Block,
+}
+
+#[derive(Hash,Clone,PartialEq,Debug)]
 pub struct Case {
   pub literal: Literal,
   pub block: Block
@@ -53,7 +59,7 @@ pub enum Statement {
   VariableDeclaration(Vec<Identifier>, Option<Expression>),
   Assignment(Assignment),
   Expression(Expression),
-  If(Expression, Block),
+  If(If),
   Switch(Switch),
   ForLoop(Block, Expression, Block, Block),
   Break,
@@ -127,6 +133,12 @@ impl fmt::Display for Expression {
     }
 }
 
+impl fmt::Display for If {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "if {} {}", self.expression, self.block)
+    }
+}
+
 impl fmt::Display for Case {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.literal.literal.len() == 0 {
@@ -190,7 +202,7 @@ impl fmt::Display for Statement {
             },
             Statement::Assignment(ref assignment) => write!(f, "{}", assignment),
             Statement::Expression(ref expression) => write!(f, "{}", expression),
-            Statement::If(ref expression, ref block) => write!(f, "if {} {}", expression, block),
+            Statement::If(ref if_statement) => write!(f, "{}", if_statement),
             Statement::Switch(ref switch) => write!(f, "{}", switch),
             Statement::Break => write!(f, "break"),
             Statement::Continue => write!(f, "continue"),
@@ -239,7 +251,7 @@ mod tests {
         let lit = Literal{ literal: "literal".to_string() };
         let exp = Expression::Literal(lit);
         let block = Block{ statements: vec![] };
-        let tmp = Statement::If(exp, block);
+        let tmp = If{ expression: exp, block: block };
         assert_eq!(tmp.to_string(), "if literal { }");
     }
 
