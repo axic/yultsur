@@ -35,6 +35,12 @@ pub struct Case {
 }
 
 #[derive(Hash,Clone,PartialEq,Debug)]
+pub struct Switch {
+  pub expression: Expression,
+  pub cases: Vec<Case>,
+}
+
+#[derive(Hash,Clone,PartialEq,Debug)]
 pub enum Statement {
   Block(Block),
   FunctionDefinition(Identifier, Vec<Identifier>, Vec<Identifier>, Block),
@@ -42,8 +48,7 @@ pub enum Statement {
   Assignment(Vec<Identifier>, Expression),
   Expression(Expression),
   If(Expression, Block),
-  Switch(Expression, Vec<Case>),
-  SwitchDefault(Expression, Vec<Case>, Block),
+  Switch(Switch),
   ForLoop(Block, Expression, Block, Block),
   Break,
   Continue,
@@ -110,6 +115,16 @@ impl fmt::Display for Case {
     }
 }
 
+impl fmt::Display for Switch {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(f, "switch {} ", self.expression));
+        for case in &self.cases {
+            try!(write!(f, "{} ", case));
+        }
+        write!(f, "")
+    }
+}
+
 impl fmt::Display for Statement {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -165,6 +180,7 @@ impl fmt::Display for Statement {
             },
             Statement::Expression(ref expression) => write!(f, "{}", expression),
             Statement::If(ref expression, ref block) => write!(f, "if {} {}", expression, block),
+            Statement::Switch(ref switch) => write!(f, "{}", switch),
             Statement::Break => write!(f, "break"),
             Statement::Continue => write!(f, "continue"),
             _ => panic!()
@@ -327,5 +343,17 @@ mod tests {
         let lit = Literal{ literal: "".to_string() };
         let tmp = Case{ literal: lit, block: block };
         assert_eq!(tmp.to_string(), "default: { }");
+    }
+
+    #[test]
+    fn switch() {
+        let block = Block{ statements: vec![] };
+        let emptylit = Literal{ literal: "".to_string() };
+        let defaultcase = Case{ literal: emptylit, block: block.clone() };
+        let lit = Literal{ literal: "1".to_string() };
+        let case = Case{ literal: lit, block: block.clone() };
+        let exp = Expression::Literal(Literal{ literal: "3".to_string() });
+        let tmp = Switch{ expression: exp, cases: vec!{case, defaultcase}};
+        assert_eq!(tmp.to_string(), "switch 3 case 1: { } default: { } ");
     }
 }
