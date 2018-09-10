@@ -61,6 +61,14 @@ pub struct Switch {
 }
 
 #[derive(Hash,Clone,PartialEq,Debug)]
+pub struct ForLoop {
+  pub pre: Block,
+  pub condition: Expression,
+  pub post: Block,
+  pub body: Block,
+}
+
+#[derive(Hash,Clone,PartialEq,Debug)]
 pub enum Statement {
   Block(Block),
   FunctionDefinition(FunctionDefinition),
@@ -69,7 +77,7 @@ pub enum Statement {
   Expression(Expression),
   If(If),
   Switch(Switch),
-  ForLoop(Block, Expression, Block, Block),
+  ForLoop(ForLoop),
   Break,
   Continue,
 }
@@ -190,6 +198,12 @@ impl fmt::Display for Switch {
     }
 }
 
+impl fmt::Display for ForLoop {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "for {} {} {} {}", self.pre, self.condition, self.post, self.body)
+    }
+}
+
 impl fmt::Display for Statement {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -216,9 +230,9 @@ impl fmt::Display for Statement {
             Statement::Expression(ref expression) => write!(f, "{}", expression),
             Statement::If(ref if_statement) => write!(f, "{}", if_statement),
             Statement::Switch(ref switch) => write!(f, "{}", switch),
+            Statement::ForLoop(ref forloop) => write!(f, "{}", forloop),
             Statement::Break => write!(f, "break"),
             Statement::Continue => write!(f, "continue"),
-            _ => panic!()
         }
     }
 }
@@ -389,5 +403,13 @@ mod tests {
         let exp = Expression::Literal(Literal{ literal: "3".to_string() });
         let tmp = Switch{ expression: exp, cases: vec!{case, defaultcase}};
         assert_eq!(tmp.to_string(), "switch 3 case 1: { } default: { } ");
+    }
+
+    #[test]
+    fn forloop() {
+        let block = Block{ statements: vec![] };
+        let exp = Expression::Literal(Literal{ literal: "1".to_string() });
+        let tmp = ForLoop{ pre: block.clone(), condition: exp, post: block.clone(), body: block.clone() };
+        assert_eq!(tmp.to_string(), "for { } 1 { } { }");
     }
 }
