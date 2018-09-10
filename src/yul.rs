@@ -16,10 +16,16 @@ pub struct Identifier {
 }
 
 #[derive(Hash,Clone,PartialEq,Debug)]
+pub struct FunctionCall {
+  pub identifier: Identifier,
+  pub arguments: Vec<Expression>,
+}
+
+#[derive(Hash,Clone,PartialEq,Debug)]
 pub enum Expression {
   Literal(Literal),
   Identifier(Identifier),
-  FunctionCall(Identifier, Vec<Expression>),
+  FunctionCall(FunctionCall),
 }
 
 #[derive(Hash,Clone,PartialEq,Debug)]
@@ -71,21 +77,25 @@ impl fmt::Display for Identifier {
     }
 }
 
+impl fmt::Display for FunctionCall {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(f, "{}(", self.identifier));
+        for (i, argument) in self.arguments.iter().enumerate() {
+            try!(write!(f, "{}", argument));
+            if i < self.arguments.len() - 1 {
+                try!(write!(f, ","));
+            }
+        }
+        write!(f, ")")
+    }
+}
+
 impl fmt::Display for Expression {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Expression::Literal(ref literal) => write!(f, "{}", literal),
             Expression::Identifier(ref identifier) => write!(f, "{}", identifier),
-            Expression::FunctionCall(ref identifier, ref expressions) => {
-                try!(write!(f, "{}(", identifier));
-                for (i, expression) in expressions.iter().enumerate() {
-                    try!(write!(f, "{}", expression));
-                    if i < expressions.len() - 1 {
-                        try!(write!(f, ","));
-                    }
-                }
-                write!(f, ")")
-            }
+            Expression::FunctionCall(ref functioncall) => write!(f, "{}", functioncall),
         }
     }
 }
@@ -189,11 +199,11 @@ mod tests {
     }
 
     #[test]
-    fn expression() {
+    fn functioncall() {
         let name = Identifier{ identifier: "test".to_string() };
         let lit = Literal{ literal: "literal".to_string() };
         let args = vec!{Expression::Identifier(name.clone()), Expression::Literal(lit.clone())};
-        let tmp = Expression::FunctionCall(name, args);
+        let tmp = FunctionCall{ identifier: name, arguments: args };
         assert_eq!(tmp.to_string(), "test(test,literal)");
     }
 
