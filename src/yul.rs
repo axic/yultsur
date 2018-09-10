@@ -22,6 +22,14 @@ pub struct FunctionCall {
 }
 
 #[derive(Hash,Clone,PartialEq,Debug)]
+pub struct FunctionDefinition {
+  pub name: Identifier,
+  pub parameters: Vec<Identifier>,
+  pub returns: Vec<Identifier>,
+  pub block: Block,
+}
+
+#[derive(Hash,Clone,PartialEq,Debug)]
 pub struct Assignment {
   pub identifiers: Vec<Identifier>,
   pub expression: Expression,
@@ -55,7 +63,7 @@ pub struct Switch {
 #[derive(Hash,Clone,PartialEq,Debug)]
 pub enum Statement {
   Block(Block),
-  FunctionDefinition(Identifier, Vec<Identifier>, Vec<Identifier>, Block),
+  FunctionDefinition(FunctionDefinition),
   VariableDeclaration(Vec<Identifier>, Option<Expression>),
   Assignment(Assignment),
   Expression(Expression),
@@ -104,6 +112,29 @@ impl fmt::Display for FunctionCall {
             }
         }
         write!(f, ")")
+    }
+}
+
+impl fmt::Display for FunctionDefinition {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(f, "function {}(", self.name));
+        for (i, identifier) in self.parameters.iter().enumerate() {
+            try!(write!(f, "{}", identifier));
+            if i < self.parameters.len() - 1 {
+                try!(write!(f, ", "));
+            }
+        }
+        try!(write!(f, ")"));
+        if self.returns.len() > 0 {
+            try!(write!(f, " -> "));
+            for (i, identifier) in self.returns.iter().enumerate() {
+                try!(write!(f, "{}", identifier));
+                if i < self.returns.len() - 1 {
+                    try!(write!(f, ", "));
+                }
+            }
+        }
+        write!(f, " {}", self.block)
     }
 }
 
@@ -163,26 +194,7 @@ impl fmt::Display for Statement {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Statement::Block(ref block) => write!(f, "{}", block),
-            Statement::FunctionDefinition(ref identifier, ref parameters, ref returns, ref block) => {
-                try!(write!(f, "function {}(", identifier));
-                for (i, identifier) in parameters.iter().enumerate() {
-                    try!(write!(f, "{}", identifier));
-                    if i < parameters.len() - 1 {
-                        try!(write!(f, ", "));
-                    }
-                }
-                try!(write!(f, ")"));
-                if returns.len() > 0 {
-                    try!(write!(f, " -> "));
-                    for (i, identifier) in returns.iter().enumerate() {
-                        try!(write!(f, "{}", identifier));
-                        if i < returns.len() - 1 {
-                            try!(write!(f, ", "));
-                        }
-                    }
-                }
-                write!(f, " {}", block)
-            },
+            Statement::FunctionDefinition(ref function) => write!(f, "{}", function),
             Statement::VariableDeclaration(ref identifiers, ref expression) => {
                 if identifiers.len() == 0 {
                   panic!("VariableDeclaration must have identifiers")
@@ -323,16 +335,15 @@ mod tests {
     fn functiondefinition_basic() {
         let empty_block = Block{ statements: vec![] };
         let name = Identifier{ identifier: "name".to_string() };
-        let tmp = Statement::FunctionDefinition(name, vec![], vec![], empty_block);
+        let tmp = FunctionDefinition{ name: name, parameters: vec![], returns: vec![], block: empty_block };
         assert_eq!(tmp.to_string(), "function name() { }");
     }
-
 
     #[test]
     fn functiondefinition_single_arg() {
         let empty_block = Block{ statements: vec![] };
         let name = Identifier{ identifier: "name".to_string() };
-        let tmp = Statement::FunctionDefinition(name.clone(), vec!{name.clone()}, vec![], empty_block);
+        let tmp = FunctionDefinition{ name: name.clone(), parameters: vec!{name.clone()}, returns: vec![], block: empty_block };
         assert_eq!(tmp.to_string(), "function name(name) { }");
     }
 
@@ -340,7 +351,7 @@ mod tests {
     fn functiondefinition_single_ret() {
         let empty_block = Block{ statements: vec![] };
         let name = Identifier{ identifier: "name".to_string() };
-        let tmp = Statement::FunctionDefinition(name.clone(), vec![], vec!{name.clone()}, empty_block);
+        let tmp = FunctionDefinition{ name: name.clone(), parameters: vec![], returns: vec!{name.clone()}, block: empty_block };
         assert_eq!(tmp.to_string(), "function name() -> name { }");
     }
 
@@ -348,7 +359,7 @@ mod tests {
     fn functiondefinition_multi() {
         let empty_block = Block{ statements: vec![] };
         let name = Identifier{ identifier: "name".to_string() };
-        let tmp = Statement::FunctionDefinition(name.clone(), vec!{name.clone(), name.clone()}, vec!{name.clone(), name.clone()}, empty_block);
+        let tmp = FunctionDefinition{ name: name.clone(), parameters: vec!{name.clone(), name.clone()}, returns: vec!{name.clone(), name.clone()}, block: empty_block };
         assert_eq!(tmp.to_string(), "function name(name, name) -> name, name { }");
     }
 
