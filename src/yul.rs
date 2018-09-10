@@ -22,6 +22,12 @@ pub struct FunctionCall {
 }
 
 #[derive(Hash,Clone,PartialEq,Debug)]
+pub struct Assignment {
+  pub identifiers: Vec<Identifier>,
+  pub expression: Expression,
+}
+
+#[derive(Hash,Clone,PartialEq,Debug)]
 pub enum Expression {
   Literal(Literal),
   Identifier(Identifier),
@@ -45,7 +51,7 @@ pub enum Statement {
   Block(Block),
   FunctionDefinition(Identifier, Vec<Identifier>, Vec<Identifier>, Block),
   VariableDeclaration(Vec<Identifier>, Option<Expression>),
-  Assignment(Vec<Identifier>, Expression),
+  Assignment(Assignment),
   Expression(Expression),
   If(Expression, Block),
   Switch(Switch),
@@ -92,6 +98,22 @@ impl fmt::Display for FunctionCall {
             }
         }
         write!(f, ")")
+    }
+}
+
+impl fmt::Display for Assignment {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // FIXME: should validate this on the new/default trait
+        if self.identifiers.len() == 0 {
+            panic!("Assignment must have identifiers")
+        }
+        for (i, identifier) in self.identifiers.iter().enumerate() {
+            try!(write!(f, "{}", identifier));
+            if i < self.identifiers.len() - 1 {
+                try!(write!(f, ", "));
+            }
+        }
+        write!(f, " := {}", self.expression)
     }
 }
 
@@ -166,18 +188,7 @@ impl fmt::Display for Statement {
                     write!(f, "")
                 }
             },
-            Statement::Assignment(ref identifiers, ref expression) => {
-                if identifiers.len() == 0 {
-                    panic!("Assignment must have identifiers")
-                }
-                for (i, identifier) in identifiers.iter().enumerate() {
-                    try!(write!(f, "{}", identifier));
-                    if i < identifiers.len() - 1 {
-                        try!(write!(f, ", "));
-                    }
-                }
-                write!(f, " := {}", expression)
-            },
+            Statement::Assignment(ref assignment) => write!(f, "{}", assignment),
             Statement::Expression(ref expression) => write!(f, "{}", expression),
             Statement::If(ref expression, ref block) => write!(f, "if {} {}", expression, block),
             Statement::Switch(ref switch) => write!(f, "{}", switch),
@@ -258,7 +269,7 @@ mod tests {
         let lit = Literal{ literal: "1".to_string() };
         let exp = Expression::Literal(lit);
         let name = Identifier{ identifier: "a".to_string() };
-        let tmp = Statement::Assignment(vec!{name}, exp);
+        let tmp = Assignment{ identifiers: vec!{name}, expression: exp };
         assert_eq!(tmp.to_string(), "a := 1");
     }
 
@@ -267,7 +278,7 @@ mod tests {
         let lit = Literal{ literal: "1".to_string() };
         let exp = Expression::Literal(lit);
         let name = Identifier{ identifier: "a".to_string() };
-        let tmp = Statement::Assignment(vec!{name.clone(), name.clone(), name.clone()}, exp);
+        let tmp = Assignment{ identifiers: vec!{name.clone(), name.clone(), name.clone()}, expression: exp };
         assert_eq!(tmp.to_string(), "a, a, a := 1");
     }
 
