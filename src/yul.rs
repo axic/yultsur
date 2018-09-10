@@ -30,6 +30,12 @@ pub struct FunctionDefinition {
 }
 
 #[derive(Hash,Clone,PartialEq,Debug)]
+pub struct VariableDeclaration {
+  pub identifiers: Vec<Identifier>,
+  pub expression: Option<Expression>
+}
+
+#[derive(Hash,Clone,PartialEq,Debug)]
 pub struct Assignment {
   pub identifiers: Vec<Identifier>,
   pub expression: Expression,
@@ -72,7 +78,7 @@ pub struct ForLoop {
 pub enum Statement {
   Block(Block),
   FunctionDefinition(FunctionDefinition),
-  VariableDeclaration(Vec<Identifier>, Option<Expression>),
+  VariableDeclaration(VariableDeclaration),
   Assignment(Assignment),
   Expression(Expression),
   If(If),
@@ -146,6 +152,27 @@ impl fmt::Display for FunctionDefinition {
     }
 }
 
+impl fmt::Display for VariableDeclaration {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // FIXME: should validate this on the new/default trait
+        if self.identifiers.len() == 0 {
+            panic!("VariableDeclaration must have identifiers")
+        }
+        try!(write!(f, "let "));
+        for (i, identifier) in self.identifiers.iter().enumerate() {
+            try!(write!(f, "{}", identifier));
+            if i < self.identifiers.len() - 1 {
+                try!(write!(f, ", "));
+            }
+        }
+        if let Some(expression) = &self.expression {
+            write!(f, " := {}", expression)
+        } else {
+            write!(f, "")
+        }
+    }
+}
+
 impl fmt::Display for Assignment {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // FIXME: should validate this on the new/default trait
@@ -209,23 +236,7 @@ impl fmt::Display for Statement {
         match *self {
             Statement::Block(ref block) => write!(f, "{}", block),
             Statement::FunctionDefinition(ref function) => write!(f, "{}", function),
-            Statement::VariableDeclaration(ref identifiers, ref expression) => {
-                if identifiers.len() == 0 {
-                  panic!("VariableDeclaration must have identifiers")
-                }
-                try!(write!(f, "let "));
-                for (i, identifier) in identifiers.iter().enumerate() {
-                    try!(write!(f, "{}", identifier));
-                    if i < identifiers.len() - 1 {
-                        try!(write!(f, ", "));
-                    }
-                }
-                if let Some(expression) = expression {
-                    write!(f, " := {}", expression)
-                } else {
-                    write!(f, "")
-                }
-            },
+            Statement::VariableDeclaration(ref variabledeclaration) => write!(f, "{}", variabledeclaration),
             Statement::Assignment(ref assignment) => write!(f, "{}", assignment),
             Statement::Expression(ref expression) => write!(f, "{}", expression),
             Statement::If(ref if_statement) => write!(f, "{}", if_statement),
@@ -323,7 +334,7 @@ mod tests {
     #[test]
     fn variabledeclaration_empty() {
         let name = Identifier{ identifier: "a".to_string() };
-        let tmp = Statement::VariableDeclaration(vec!{name}, None);
+        let tmp = VariableDeclaration{ identifiers: vec!{name}, expression: None };
         assert_eq!(tmp.to_string(), "let a");
     }
 
@@ -332,7 +343,7 @@ mod tests {
         let lit = Literal{ literal: "1".to_string() };
         let exp = Expression::Literal(lit);
         let name = Identifier{ identifier: "a".to_string() };
-        let tmp = Statement::VariableDeclaration(vec!{name}, Some(exp));
+        let tmp = VariableDeclaration{ identifiers: vec!{name}, expression: Some(exp) };
         assert_eq!(tmp.to_string(), "let a := 1");
     }
 
@@ -341,7 +352,7 @@ mod tests {
         let lit = Literal{ literal: "1".to_string() };
         let exp = Expression::Literal(lit);
         let name = Identifier{ identifier: "a".to_string() };
-        let tmp = Statement::VariableDeclaration(vec!{name.clone(), name.clone(), name.clone()}, Some(exp));
+        let tmp = VariableDeclaration{ identifiers: vec!{name.clone(), name.clone(), name.clone()}, expression: Some(exp) };
         assert_eq!(tmp.to_string(), "let a, a, a := 1");
     }
 
