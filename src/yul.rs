@@ -26,6 +26,7 @@ pub struct Literal {
 #[derive(Hash, Clone, PartialEq, Debug)]
 pub struct Identifier {
     pub identifier: String,
+    pub yultype: Option<Type>,
 }
 
 #[derive(Hash, Clone, PartialEq, Debug)]
@@ -120,6 +121,7 @@ impl Identifier {
     pub fn new(identifier: &str) -> Self {
         Identifier {
             identifier: identifier.to_string(),
+            yultype: None,
         }
     }
 }
@@ -146,7 +148,12 @@ impl fmt::Display for Literal {
 
 impl fmt::Display for Identifier {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.identifier)
+        try!(write!(f, "{}", self.identifier));
+        if let Some(yultype) = &self.yultype {
+            write!(f, ":{}", yultype)
+        } else {
+            write!(f, "")
+        }
     }
 }
 
@@ -344,8 +351,31 @@ mod tests {
         assert_eq!(
             Identifier {
                 identifier: "testidentifier".to_string(),
+                yultype: None,
             }.to_string(),
             "testidentifier"
+        );
+    }
+
+    #[test]
+    fn identifier_typed() {
+        assert_eq!(
+            Identifier {
+                identifier: "testidentifier".to_string(),
+                yultype: Some(Type::Uint256),
+            }.to_string(),
+            "testidentifier:u256"
+        );
+    }
+
+    #[test]
+    fn identifierr_custom_typed() {
+        assert_eq!(
+            Identifier {
+                identifier: "testidentifier".to_string(),
+                yultype: Some(Type::Custom("memptr".to_string())),
+            }.to_string(),
+            "testidentifier:memptr"
         );
     }
 
@@ -355,10 +385,12 @@ mod tests {
             FunctionCall {
                 identifier: Identifier {
                     identifier: "test".to_string(),
+                    yultype: None,
                 },
                 arguments: vec![
                     Expression::Identifier(Identifier {
                         identifier: "test".to_string(),
+                        yultype: None,
                     }),
                     Expression::Literal(Literal {
                         literal: "literal".to_string(),
@@ -418,6 +450,7 @@ mod tests {
             Assignment {
                 identifiers: vec![Identifier {
                     identifier: "a".to_string(),
+                    yultype: None,
                 }],
                 expression: Expression::Literal(Literal {
                     literal: "1".to_string(),
@@ -435,12 +468,15 @@ mod tests {
                 identifiers: vec![
                     Identifier {
                         identifier: "a".to_string(),
+                        yultype: None,
                     },
                     Identifier {
                         identifier: "b".to_string(),
+                        yultype: None,
                     },
                     Identifier {
                         identifier: "c".to_string(),
+                        yultype: None,
                     },
                 ],
                 expression: Expression::Literal(Literal {
@@ -458,6 +494,7 @@ mod tests {
             VariableDeclaration {
                 identifiers: vec![Identifier {
                     identifier: "a".to_string(),
+                    yultype: None,
                 }],
                 expression: None,
             }.to_string(),
@@ -471,6 +508,7 @@ mod tests {
             VariableDeclaration {
                 identifiers: vec![Identifier {
                     identifier: "a".to_string(),
+                    yultype: None,
                 }],
                 expression: Some(Expression::Literal(Literal {
                     literal: "1".to_string(),
@@ -488,12 +526,15 @@ mod tests {
                 identifiers: vec![
                     Identifier {
                         identifier: "a".to_string(),
+                        yultype: None,
                     },
                     Identifier {
                         identifier: "b".to_string(),
+                        yultype: None,
                     },
                     Identifier {
                         identifier: "c".to_string(),
+                        yultype: None,
                     },
                 ],
                 expression: Some(Expression::Literal(Literal {
@@ -511,6 +552,7 @@ mod tests {
             FunctionDefinition {
                 name: Identifier {
                     identifier: "name".to_string(),
+                    yultype: None,
                 },
                 parameters: vec![],
                 returns: vec![],
@@ -526,9 +568,11 @@ mod tests {
             FunctionDefinition {
                 name: Identifier {
                     identifier: "name".to_string(),
+                    yultype: None,
                 },
                 parameters: vec![Identifier {
                     identifier: "a".to_string(),
+                    yultype: None,
                 }],
                 returns: vec![],
                 block: Block { statements: vec![] },
@@ -543,10 +587,12 @@ mod tests {
             FunctionDefinition {
                 name: Identifier {
                     identifier: "name".to_string(),
+                    yultype: None,
                 },
                 parameters: vec![],
                 returns: vec![Identifier {
                     identifier: "a".to_string(),
+                    yultype: None,
                 }],
                 block: Block { statements: vec![] },
             }.to_string(),
@@ -560,21 +606,26 @@ mod tests {
             FunctionDefinition {
                 name: Identifier {
                     identifier: "name".to_string(),
+                    yultype: None,
                 },
                 parameters: vec![
                     Identifier {
                         identifier: "a".to_string(),
+                        yultype: None,
                     },
                     Identifier {
                         identifier: "b".to_string(),
+                        yultype: None,
                     },
                 ],
                 returns: vec![
                     Identifier {
                         identifier: "c".to_string(),
+                        yultype: None,
                     },
                     Identifier {
                         identifier: "d".to_string(),
+                        yultype: None,
                     },
                 ],
                 block: Block { statements: vec![] },
