@@ -253,9 +253,9 @@ impl fmt::Display for Case {
             if literal.literal.len() == 0 {
                 panic!("Case with literal should not be empty");
             }
-            write!(f, "case {}: {}", literal, self.block)
+            write!(f, "case {} {}", literal, self.block)
         } else {
-            write!(f, "default: {}", self.block)
+            write!(f, "default {}", self.block)
         }
     }
 }
@@ -644,7 +644,7 @@ mod tests {
                 }),
                 block: Block { statements: vec![] },
             }.to_string(),
-            "case literal: { }"
+            "case literal { }"
         );
     }
 
@@ -655,7 +655,7 @@ mod tests {
                 literal: None,
                 block: Block { statements: vec![] },
             }.to_string(),
-            "default: { }"
+            "default { }"
         );
     }
 
@@ -681,7 +681,7 @@ mod tests {
                     },
                 ],
             }.to_string(),
-            "switch 3 case 1: { } default: { } "
+            "switch 3 case 1 { } default { } "
         );
     }
 
