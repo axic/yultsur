@@ -56,7 +56,7 @@ pub struct If {
 
 #[derive(Hash, Clone, PartialEq, Debug)]
 pub struct Case {
-    pub literal: Literal,
+    pub literal: Option<Literal>,
     pub block: Block,
 }
 
@@ -207,10 +207,14 @@ impl fmt::Display for If {
 
 impl fmt::Display for Case {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if self.literal.literal.len() == 0 {
-            write!(f, "default: {}", self.block)
+        if let Some(literal) = &self.literal {
+            // FIXME: should validate this on the new/default trait
+            if literal.literal.len() == 0 {
+                panic!("Case with literal should not be empty");
+            }
+            write!(f, "case {}: {}", literal, self.block)
         } else {
-            write!(f, "case {}: {}", self.literal, self.block)
+            write!(f, "default: {}", self.block)
         }
     }
 }
@@ -519,9 +523,9 @@ mod tests {
     fn case() {
         assert_eq!(
             Case {
-                literal: Literal {
+                literal: Some(Literal {
                     literal: "literal".to_string(),
-                },
+                }),
                 block: Block { statements: vec![] },
             }.to_string(),
             "case literal: { }"
@@ -532,9 +536,7 @@ mod tests {
     fn case_default() {
         assert_eq!(
             Case {
-                literal: Literal {
-                    literal: "".to_string(),
-                },
+                literal: None,
                 block: Block { statements: vec![] },
             }.to_string(),
             "default: { }"
@@ -550,15 +552,13 @@ mod tests {
                 }),
                 cases: vec![
                     Case {
-                        literal: Literal {
+                        literal: Some(Literal {
                             literal: "1".to_string(),
-                        },
+                        }),
                         block: Block { statements: vec![] },
                     },
                     Case {
-                        literal: Literal {
-                            literal: "".to_string(),
-                        },
+                        literal: None,
                         block: Block { statements: vec![] },
                     },
                 ],
