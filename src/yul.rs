@@ -264,163 +264,329 @@ mod tests {
 
     #[test]
     fn literal() {
-        let tmp = Literal{ literal: "testliteral".to_string() };
-        assert_eq!(tmp.to_string(), "testliteral");
+        assert_eq!(
+            Literal {
+                literal: "testliteral".to_string(),
+            }.to_string(),
+            "testliteral"
+        );
     }
 
     #[test]
     fn identifier() {
-        let tmp = Identifier{ identifier: "testidentifier".to_string() };
-        assert_eq!(tmp.to_string(), "testidentifier");
+        assert_eq!(
+            Identifier {
+                identifier: "testidentifier".to_string(),
+            }.to_string(),
+            "testidentifier"
+        );
     }
 
     #[test]
     fn functioncall() {
-        let name = Identifier{ identifier: "test".to_string() };
-        let lit = Literal{ literal: "literal".to_string() };
-        let args = vec!{Expression::Identifier(name.clone()), Expression::Literal(lit.clone())};
-        let tmp = FunctionCall{ identifier: name, arguments: args };
-        assert_eq!(tmp.to_string(), "test(test,literal)");
+        assert_eq!(
+            FunctionCall {
+                identifier: Identifier {
+                    identifier: "test".to_string(),
+                },
+                arguments: vec![Expression::Identifier(Identifier {
+                     identifier: "test".to_string(),
+                }), Expression::Literal(Literal {
+                     literal: "literal".to_string(),
+                })],
+            }.to_string(),
+            "test(test,literal)"
+        );
     }
 
     #[test]
     fn if_statement() {
-        let lit = Literal{ literal: "literal".to_string() };
-        let exp = Expression::Literal(lit);
-        let block = Block{ statements: vec![] };
-        let tmp = If{ expression: exp, block: block };
-        assert_eq!(tmp.to_string(), "if literal { }");
+        assert_eq!(
+            If {
+                expression: Expression::Literal(Literal {
+                    literal: "literal".to_string(),
+                }),
+                block: Block {
+                    statements: vec![],
+                },
+            }.to_string(),
+            "if literal { }"
+        );
     }
 
     #[test]
     fn block_empty() {
-        let block = Block{ statements: vec![] };
-        assert_eq!(block.to_string(), "{ }");
+        assert_eq!(
+            Block {
+                statements: vec![],
+            }.to_string(),
+            "{ }"
+        );
     }
 
     #[test]
     fn block_nested() {
-        let empty_block = Block{ statements: vec![] };
-        let block = Block{ statements: vec!{Statement::Block(empty_block)} };
-        assert_eq!(block.to_string(), "{ { } }");
+        assert_eq!(
+            Block {
+                statements: vec![Statement::Block(Block {
+                    statements: vec![]
+                })],
+            }.to_string(),
+            "{ { } }"
+        );
     }
 
     #[test]
     fn block_literal() {
-        let lit = Literal{ literal: "literal".to_string() };
-        let exp = Expression::Literal(lit);
-        let block = Block{ statements: vec!{Statement::Expression(exp)} };
-        assert_eq!(block.to_string(), "{ literal }");
+        assert_eq!(
+            Block {
+                statements: vec![Statement::Expression(Expression::Literal(Literal {
+                    literal: "literal".to_string(),
+                }))],
+            }.to_string(),
+            "{ literal }"
+        );
     }
 
     #[test]
     fn assignment_single() {
-        let lit = Literal{ literal: "1".to_string() };
-        let exp = Expression::Literal(lit);
-        let name = Identifier{ identifier: "a".to_string() };
-        let tmp = Assignment{ identifiers: vec!{name}, expression: exp };
-        assert_eq!(tmp.to_string(), "a := 1");
+        assert_eq!(
+            Assignment {
+                identifiers: vec![Identifier {
+                    identifier: "a".to_string(),
+                }],
+                expression: Expression::Literal(Literal {
+                    literal: "1".to_string(),
+                }),
+            }.to_string(),
+            "a := 1"
+        );
     }
 
     #[test]
     fn assignment_multi() {
-        let lit = Literal{ literal: "1".to_string() };
-        let exp = Expression::Literal(lit);
-        let name = Identifier{ identifier: "a".to_string() };
-        let tmp = Assignment{ identifiers: vec!{name.clone(), name.clone(), name.clone()}, expression: exp };
-        assert_eq!(tmp.to_string(), "a, a, a := 1");
+        assert_eq!(
+            Assignment {
+                identifiers: vec![Identifier {
+                    identifier: "a".to_string(),
+                }, Identifier {
+                    identifier: "b".to_string(),
+                }, Identifier {
+                    identifier: "c".to_string(),
+                }],
+                expression: Expression::Literal(Literal {
+                    literal: "1".to_string(),
+                }),
+            }.to_string(),
+            "a, b, c := 1"
+        );
     }
 
     #[test]
     fn variabledeclaration_empty() {
-        let name = Identifier{ identifier: "a".to_string() };
-        let tmp = VariableDeclaration{ identifiers: vec!{name}, expression: None };
-        assert_eq!(tmp.to_string(), "let a");
+        assert_eq!(
+            VariableDeclaration {
+                identifiers: vec![Identifier {
+                    identifier: "a".to_string(),
+                }],
+                expression: None,
+            }.to_string(),
+            "let a"
+        );
     }
 
     #[test]
     fn variabledeclaration_single() {
-        let lit = Literal{ literal: "1".to_string() };
-        let exp = Expression::Literal(lit);
-        let name = Identifier{ identifier: "a".to_string() };
-        let tmp = VariableDeclaration{ identifiers: vec!{name}, expression: Some(exp) };
-        assert_eq!(tmp.to_string(), "let a := 1");
+        assert_eq!(
+            VariableDeclaration {
+                identifiers: vec![Identifier {
+                    identifier: "a".to_string(),
+                }],
+                expression: Some(Expression::Literal(Literal {
+                    literal: "1".to_string(),
+                })),
+            }.to_string(),
+            "let a := 1"
+        );
     }
 
     #[test]
     fn variabledeclaration_multi() {
-        let lit = Literal{ literal: "1".to_string() };
-        let exp = Expression::Literal(lit);
-        let name = Identifier{ identifier: "a".to_string() };
-        let tmp = VariableDeclaration{ identifiers: vec!{name.clone(), name.clone(), name.clone()}, expression: Some(exp) };
-        assert_eq!(tmp.to_string(), "let a, a, a := 1");
+        assert_eq!(
+            VariableDeclaration {
+                identifiers: vec![Identifier {
+                    identifier: "a".to_string(),
+                }, Identifier {
+                    identifier: "b".to_string(),
+                }, Identifier {
+                    identifier: "c".to_string(),
+                }],
+                expression: Some(Expression::Literal(Literal {
+                    literal: "1".to_string(),
+                })),
+            }.to_string(),
+            "let a, b, c := 1"
+        );
     }
 
     #[test]
     fn functiondefinition_basic() {
-        let empty_block = Block{ statements: vec![] };
-        let name = Identifier{ identifier: "name".to_string() };
-        let tmp = FunctionDefinition{ name: name, parameters: vec![], returns: vec![], block: empty_block };
-        assert_eq!(tmp.to_string(), "function name() { }");
+        assert_eq!(
+            FunctionDefinition {
+                name: Identifier {
+                    identifier: "name".to_string(),
+                },
+                parameters: vec![],
+                returns: vec![],
+                block: Block {
+                    statements: vec![],
+                },
+            }.to_string(),
+            "function name() { }"
+        );
     }
 
     #[test]
     fn functiondefinition_single_arg() {
-        let empty_block = Block{ statements: vec![] };
-        let name = Identifier{ identifier: "name".to_string() };
-        let tmp = FunctionDefinition{ name: name.clone(), parameters: vec!{name.clone()}, returns: vec![], block: empty_block };
-        assert_eq!(tmp.to_string(), "function name(name) { }");
+        assert_eq!(
+            FunctionDefinition {
+                name: Identifier {
+                    identifier: "name".to_string(),
+                },
+                parameters: vec![Identifier {
+                    identifier: "a".to_string(),
+                }],
+                returns: vec![],
+                block: Block {
+                    statements: vec![],
+                },
+            }.to_string(),
+            "function name(a) { }"
+        );
     }
 
     #[test]
     fn functiondefinition_single_ret() {
-        let empty_block = Block{ statements: vec![] };
-        let name = Identifier{ identifier: "name".to_string() };
-        let tmp = FunctionDefinition{ name: name.clone(), parameters: vec![], returns: vec!{name.clone()}, block: empty_block };
-        assert_eq!(tmp.to_string(), "function name() -> name { }");
+        assert_eq!(
+            FunctionDefinition {
+                name: Identifier {
+                    identifier: "name".to_string(),
+                },
+                parameters: vec![],
+                returns: vec![Identifier {
+                    identifier: "a".to_string(),
+                }],
+                block: Block {
+                    statements: vec![],
+                },
+            }.to_string(),
+            "function name() -> a { }"
+        );
     }
 
     #[test]
     fn functiondefinition_multi() {
-        let empty_block = Block{ statements: vec![] };
-        let name = Identifier{ identifier: "name".to_string() };
-        let tmp = FunctionDefinition{ name: name.clone(), parameters: vec!{name.clone(), name.clone()}, returns: vec!{name.clone(), name.clone()}, block: empty_block };
-        assert_eq!(tmp.to_string(), "function name(name, name) -> name, name { }");
+        assert_eq!(
+            FunctionDefinition {
+                name: Identifier {
+                    identifier: "name".to_string(),
+                },
+                parameters: vec![Identifier {
+                    identifier: "a".to_string(),
+                }, Identifier {
+                    identifier: "b".to_string(),
+                }],
+                returns: vec![Identifier {
+                    identifier: "c".to_string(),
+                }, Identifier {
+                    identifier: "d".to_string(),
+                }],
+                block: Block {
+                    statements: vec![],
+                },
+            }.to_string(),
+            "function name(a, b) -> c, d { }"
+        );
     }
 
     #[test]
     fn case() {
-        let block = Block{ statements: vec![] };
-        let lit = Literal{ literal: "literal".to_string() };
-        let tmp = Case{ literal: lit, block: block };
-        assert_eq!(tmp.to_string(), "case literal: { }");
+        assert_eq!(
+            Case {
+                literal: Literal {
+                    literal: "literal".to_string(),
+                },
+                block: Block {
+                    statements: vec![],
+                },
+            }.to_string(),
+            "case literal: { }"
+        );
     }
 
     #[test]
     fn case_default() {
-        let block = Block{ statements: vec![] };
-        let lit = Literal{ literal: "".to_string() };
-        let tmp = Case{ literal: lit, block: block };
-        assert_eq!(tmp.to_string(), "default: { }");
+        assert_eq!(
+            Case {
+                literal: Literal {
+                    literal: "".to_string(),
+                },
+                block: Block {
+                    statements: vec![],
+                },
+            }.to_string(),
+            "default: { }"
+        );
     }
 
     #[test]
     fn switch() {
-        let block = Block{ statements: vec![] };
-        let emptylit = Literal{ literal: "".to_string() };
-        let defaultcase = Case{ literal: emptylit, block: block.clone() };
-        let lit = Literal{ literal: "1".to_string() };
-        let case = Case{ literal: lit, block: block.clone() };
-        let exp = Expression::Literal(Literal{ literal: "3".to_string() });
-        let tmp = Switch{ expression: exp, cases: vec!{case, defaultcase}};
-        assert_eq!(tmp.to_string(), "switch 3 case 1: { } default: { } ");
+        assert_eq!(
+            Switch {
+                expression: Expression::Literal(Literal {
+                    literal: "3".to_string(),
+                }),
+                cases: vec![
+                    Case {
+                        literal: Literal {
+                            literal: "1".to_string(),
+                        },
+                        block: Block {
+                            statements: vec![],
+                        }
+                    },
+                    Case {
+                        literal: Literal {
+                            literal: "".to_string(),
+                        },
+                        block: Block {
+                            statements: vec![],
+                        }
+                    },
+                ],
+            }.to_string(),
+            "switch 3 case 1: { } default: { } "
+        );
     }
 
     #[test]
     fn forloop() {
-        let block = Block{ statements: vec![] };
-        let exp = Expression::Literal(Literal{ literal: "1".to_string() });
-        let tmp = ForLoop{ pre: block.clone(), condition: exp, post: block.clone(), body: block.clone() };
-        assert_eq!(tmp.to_string(), "for { } 1 { } { }");
+        assert_eq!(
+            ForLoop {
+                pre: Block {
+                    statements: vec![],
+                },
+                condition: Expression::Literal(Literal {
+                    literal: "1".to_string(),
+                }),
+                post: Block {
+                    statements: vec![],
+                },
+                body: Block {
+                    statements: vec![],
+                }
+            }.to_string(),
+            "for { } 1 { } { }"
+        );
     }
 }
