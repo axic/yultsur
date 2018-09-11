@@ -4,11 +4,15 @@ use std::fmt;
 pub enum Type {
     Bool,
     Uint256,
+    Uint128,
     Uint64,
     Uint32,
+    Uint8,
     Int256,
+    Int128,
     Int64,
     Int32,
+    Int8,
     Custom(String),
 }
 
@@ -107,11 +111,15 @@ impl fmt::Display for Type {
         match *self {
             Type::Bool => write!(f, "bool"),
             Type::Uint256 => write!(f, "u256"),
+            Type::Uint128 => write!(f, "u128"),
             Type::Uint64 => write!(f, "u64"),
             Type::Uint32 => write!(f, "u32"),
+            Type::Uint8 => write!(f, "u8"),
             Type::Int256 => write!(f, "i256"),
+            Type::Int128 => write!(f, "i128"),
             Type::Int64 => write!(f, "i64"),
             Type::Int32 => write!(f, "i32"),
+            Type::Int8 => write!(f, "i8"),
             Type::Custom(ref name) => write!(f, "{}", name),
         }
     }
