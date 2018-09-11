@@ -160,12 +160,15 @@ impl fmt::Display for Identifier {
 impl fmt::Display for FunctionCall {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(f, "{}(", self.identifier));
-        for (i, argument) in self.arguments.iter().enumerate() {
-            try!(write!(f, "{}", argument));
-            if i < self.arguments.len() - 1 {
-                try!(write!(f, ","));
-            }
-        }
+        try!(write!(
+            f,
+            "{}",
+            self.arguments
+                .iter()
+                .map(|argument| format!("{}", argument))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
         write!(f, ")")
     }
 }
@@ -173,21 +176,27 @@ impl fmt::Display for FunctionCall {
 impl fmt::Display for FunctionDefinition {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(f, "function {}(", self.name));
-        for (i, identifier) in self.parameters.iter().enumerate() {
-            try!(write!(f, "{}", identifier));
-            if i < self.parameters.len() - 1 {
-                try!(write!(f, ", "));
-            }
-        }
+        try!(write!(
+            f,
+            "{}",
+            self.parameters
+                .iter()
+                .map(|identifier| format!("{}", identifier))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
         try!(write!(f, ")"));
         if self.returns.len() > 0 {
             try!(write!(f, " -> "));
-            for (i, identifier) in self.returns.iter().enumerate() {
-                try!(write!(f, "{}", identifier));
-                if i < self.returns.len() - 1 {
-                    try!(write!(f, ", "));
-                }
-            }
+            try!(write!(
+                f,
+                "{}",
+                self.returns
+                    .iter()
+                    .map(|identifier| format!("{}", identifier))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
         }
         write!(f, " {}", self.block)
     }
@@ -200,12 +209,15 @@ impl fmt::Display for VariableDeclaration {
             panic!("VariableDeclaration must have identifiers")
         }
         try!(write!(f, "let "));
-        for (i, identifier) in self.identifiers.iter().enumerate() {
-            try!(write!(f, "{}", identifier));
-            if i < self.identifiers.len() - 1 {
-                try!(write!(f, ", "));
-            }
-        }
+        try!(write!(
+            f,
+            "{}",
+            self.identifiers
+                .iter()
+                .map(|identifier| format!("{}", identifier))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
         if let Some(expression) = &self.expression {
             write!(f, " := {}", expression)
         } else {
@@ -220,12 +232,15 @@ impl fmt::Display for Assignment {
         if self.identifiers.len() == 0 {
             panic!("Assignment must have identifiers")
         }
-        for (i, identifier) in self.identifiers.iter().enumerate() {
-            try!(write!(f, "{}", identifier));
-            if i < self.identifiers.len() - 1 {
-                try!(write!(f, ", "));
-            }
-        }
+        try!(write!(
+            f,
+            "{}",
+            self.identifiers
+                .iter()
+                .map(|identifier| format!("{}", identifier))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
         write!(f, " := {}", self.expression)
     }
 }
@@ -398,7 +413,7 @@ mod tests {
                     }),
                 ],
             }.to_string(),
-            "test(test,literal)"
+            "test(test, literal)"
         );
     }
 
