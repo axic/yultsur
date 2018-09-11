@@ -13,5 +13,5 @@ Planned:
 - Yul parser
 - Yul compiler (integration with Solidity, through [solc-rust])
 
-[Yul]: (https://solidity.readthedocs.org/develop/yul)
-[solc-rust]: (https://github.com/axic/solc-rust)
+[Yul]: https://solidity.readthedocs.io/en/latest/yul.html
+[solc-rust]: https://github.com/axic/solc-rust
