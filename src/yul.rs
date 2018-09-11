@@ -1,6 +1,18 @@
 use std::fmt;
 
 #[derive(Hash, Clone, PartialEq, Debug)]
+pub enum Type {
+    Bool,
+    Uint256,
+    Uint64,
+    Uint32,
+    Int256,
+    Int64,
+    Int32,
+    Custom(String),
+}
+
+#[derive(Hash, Clone, PartialEq, Debug)]
 pub struct Block {
     pub statements: Vec<Statement>,
 }
@@ -8,6 +20,7 @@ pub struct Block {
 #[derive(Hash, Clone, PartialEq, Debug)]
 pub struct Literal {
     pub literal: String,
+    pub yultype: Option<Type>,
 }
 
 #[derive(Hash, Clone, PartialEq, Debug)]
@@ -88,6 +101,21 @@ pub enum Statement {
     Continue,
 }
 
+impl fmt::Display for Type {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Type::Bool => write!(f, "bool"),
+            Type::Uint256 => write!(f, "u256"),
+            Type::Uint64 => write!(f, "u64"),
+            Type::Uint32 => write!(f, "u32"),
+            Type::Int256 => write!(f, "i256"),
+            Type::Int64 => write!(f, "i64"),
+            Type::Int32 => write!(f, "i32"),
+            Type::Custom(ref name) => write!(f, "{}", name),
+        }
+    }
+}
+
 impl Identifier {
     pub fn new(identifier: &str) -> Self {
         Identifier {
@@ -100,13 +128,19 @@ impl Literal {
     pub fn new(literal: &str) -> Self {
         Literal {
             literal: literal.to_string(),
+            yultype: None,
         }
     }
 }
 
 impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.literal)
+        try!(write!(f, "{}", self.literal));
+        if let Some(yultype) = &self.yultype {
+            write!(f, ":{}", yultype)
+        } else {
+            write!(f, "")
+        }
     }
 }
 
@@ -277,8 +311,31 @@ mod tests {
         assert_eq!(
             Literal {
                 literal: "testliteral".to_string(),
+                yultype: None,
             }.to_string(),
             "testliteral"
+        );
+    }
+
+    #[test]
+    fn literal_typed() {
+        assert_eq!(
+            Literal {
+                literal: "testliteral".to_string(),
+                yultype: Some(Type::Uint256),
+            }.to_string(),
+            "testliteral:u256"
+        );
+    }
+
+    #[test]
+    fn literal_custom_typed() {
+        assert_eq!(
+            Literal {
+                literal: "testliteral".to_string(),
+                yultype: Some(Type::Custom("memptr".to_string())),
+            }.to_string(),
+            "testliteral:memptr"
         );
     }
 
@@ -305,6 +362,7 @@ mod tests {
                     }),
                     Expression::Literal(Literal {
                         literal: "literal".to_string(),
+                        yultype: None,
                     }),
                 ],
             }.to_string(),
@@ -318,6 +376,7 @@ mod tests {
             If {
                 expression: Expression::Literal(Literal {
                     literal: "literal".to_string(),
+                    yultype: None,
                 }),
                 block: Block { statements: vec![] },
             }.to_string(),
@@ -346,6 +405,7 @@ mod tests {
             Block {
                 statements: vec![Statement::Expression(Expression::Literal(Literal {
                     literal: "literal".to_string(),
+                    yultype: None,
                 }))],
             }.to_string(),
             "{ literal }"
@@ -361,6 +421,7 @@ mod tests {
                 }],
                 expression: Expression::Literal(Literal {
                     literal: "1".to_string(),
+                    yultype: None,
                 }),
             }.to_string(),
             "a := 1"
@@ -384,6 +445,7 @@ mod tests {
                 ],
                 expression: Expression::Literal(Literal {
                     literal: "1".to_string(),
+                    yultype: None,
                 }),
             }.to_string(),
             "a, b, c := 1"
@@ -412,6 +474,7 @@ mod tests {
                 }],
                 expression: Some(Expression::Literal(Literal {
                     literal: "1".to_string(),
+                    yultype: None,
                 })),
             }.to_string(),
             "let a := 1"
@@ -435,6 +498,7 @@ mod tests {
                 ],
                 expression: Some(Expression::Literal(Literal {
                     literal: "1".to_string(),
+                    yultype: None,
                 })),
             }.to_string(),
             "let a, b, c := 1"
@@ -525,6 +589,7 @@ mod tests {
             Case {
                 literal: Some(Literal {
                     literal: "literal".to_string(),
+                    yultype: None,
                 }),
                 block: Block { statements: vec![] },
             }.to_string(),
@@ -549,11 +614,13 @@ mod tests {
             Switch {
                 expression: Expression::Literal(Literal {
                     literal: "3".to_string(),
+                    yultype: None,
                 }),
                 cases: vec![
                     Case {
                         literal: Some(Literal {
                             literal: "1".to_string(),
+                            yultype: None,
                         }),
                         block: Block { statements: vec![] },
                     },
@@ -574,6 +641,7 @@ mod tests {
                 pre: Block { statements: vec![] },
                 condition: Expression::Literal(Literal {
                     literal: "1".to_string(),
+                    yultype: None,
                 }),
                 post: Block { statements: vec![] },
                 body: Block { statements: vec![] },
