@@ -1,97 +1,97 @@
 use std::fmt;
 
-#[derive(Hash,Clone,PartialEq,Debug)]
+#[derive(Hash, Clone, PartialEq, Debug)]
 pub struct Block {
-  pub statements: Vec<Statement>
+    pub statements: Vec<Statement>,
 }
 
-#[derive(Hash,Clone,PartialEq,Debug)]
+#[derive(Hash, Clone, PartialEq, Debug)]
 pub struct Literal {
-  pub literal: String
+    pub literal: String,
 }
 
-#[derive(Hash,Clone,PartialEq,Debug)]
+#[derive(Hash, Clone, PartialEq, Debug)]
 pub struct Identifier {
-  pub identifier: String
+    pub identifier: String,
 }
 
-#[derive(Hash,Clone,PartialEq,Debug)]
+#[derive(Hash, Clone, PartialEq, Debug)]
 pub struct FunctionCall {
-  pub identifier: Identifier,
-  pub arguments: Vec<Expression>,
+    pub identifier: Identifier,
+    pub arguments: Vec<Expression>,
 }
 
-#[derive(Hash,Clone,PartialEq,Debug)]
+#[derive(Hash, Clone, PartialEq, Debug)]
 pub struct FunctionDefinition {
-  pub name: Identifier,
-  pub parameters: Vec<Identifier>,
-  pub returns: Vec<Identifier>,
-  pub block: Block,
+    pub name: Identifier,
+    pub parameters: Vec<Identifier>,
+    pub returns: Vec<Identifier>,
+    pub block: Block,
 }
 
-#[derive(Hash,Clone,PartialEq,Debug)]
+#[derive(Hash, Clone, PartialEq, Debug)]
 pub struct VariableDeclaration {
-  pub identifiers: Vec<Identifier>,
-  pub expression: Option<Expression>
+    pub identifiers: Vec<Identifier>,
+    pub expression: Option<Expression>,
 }
 
-#[derive(Hash,Clone,PartialEq,Debug)]
+#[derive(Hash, Clone, PartialEq, Debug)]
 pub struct Assignment {
-  pub identifiers: Vec<Identifier>,
-  pub expression: Expression,
+    pub identifiers: Vec<Identifier>,
+    pub expression: Expression,
 }
 
-#[derive(Hash,Clone,PartialEq,Debug)]
+#[derive(Hash, Clone, PartialEq, Debug)]
 pub enum Expression {
-  Literal(Literal),
-  Identifier(Identifier),
-  FunctionCall(FunctionCall),
+    Literal(Literal),
+    Identifier(Identifier),
+    FunctionCall(FunctionCall),
 }
 
-#[derive(Hash,Clone,PartialEq,Debug)]
+#[derive(Hash, Clone, PartialEq, Debug)]
 pub struct If {
-  pub expression: Expression,
-  pub block: Block,
+    pub expression: Expression,
+    pub block: Block,
 }
 
-#[derive(Hash,Clone,PartialEq,Debug)]
+#[derive(Hash, Clone, PartialEq, Debug)]
 pub struct Case {
-  pub literal: Literal,
-  pub block: Block
+    pub literal: Literal,
+    pub block: Block,
 }
 
-#[derive(Hash,Clone,PartialEq,Debug)]
+#[derive(Hash, Clone, PartialEq, Debug)]
 pub struct Switch {
-  pub expression: Expression,
-  pub cases: Vec<Case>,
+    pub expression: Expression,
+    pub cases: Vec<Case>,
 }
 
-#[derive(Hash,Clone,PartialEq,Debug)]
+#[derive(Hash, Clone, PartialEq, Debug)]
 pub struct ForLoop {
-  pub pre: Block,
-  pub condition: Expression,
-  pub post: Block,
-  pub body: Block,
+    pub pre: Block,
+    pub condition: Expression,
+    pub post: Block,
+    pub body: Block,
 }
 
-#[derive(Hash,Clone,PartialEq,Debug)]
+#[derive(Hash, Clone, PartialEq, Debug)]
 pub enum Statement {
-  Block(Block),
-  FunctionDefinition(FunctionDefinition),
-  VariableDeclaration(VariableDeclaration),
-  Assignment(Assignment),
-  Expression(Expression),
-  If(If),
-  Switch(Switch),
-  ForLoop(ForLoop),
-  Break,
-  Continue,
+    Block(Block),
+    FunctionDefinition(FunctionDefinition),
+    VariableDeclaration(VariableDeclaration),
+    Assignment(Assignment),
+    Expression(Expression),
+    If(If),
+    Switch(Switch),
+    ForLoop(ForLoop),
+    Break,
+    Continue,
 }
 
 impl Identifier {
     pub fn new(identifier: &str) -> Self {
         Identifier {
-            identifier: identifier.to_string()
+            identifier: identifier.to_string(),
         }
     }
 }
@@ -99,7 +99,7 @@ impl Identifier {
 impl Literal {
     pub fn new(literal: &str) -> Self {
         Literal {
-            literal: literal.to_string()
+            literal: literal.to_string(),
         }
     }
 }
@@ -227,7 +227,11 @@ impl fmt::Display for Switch {
 
 impl fmt::Display for ForLoop {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "for {} {} {} {}", self.pre, self.condition, self.post, self.body)
+        write!(
+            f,
+            "for {} {} {} {}",
+            self.pre, self.condition, self.post, self.body
+        )
     }
 }
 
@@ -236,7 +240,9 @@ impl fmt::Display for Statement {
         match *self {
             Statement::Block(ref block) => write!(f, "{}", block),
             Statement::FunctionDefinition(ref function) => write!(f, "{}", function),
-            Statement::VariableDeclaration(ref variabledeclaration) => write!(f, "{}", variabledeclaration),
+            Statement::VariableDeclaration(ref variabledeclaration) => {
+                write!(f, "{}", variabledeclaration)
+            }
             Statement::Assignment(ref assignment) => write!(f, "{}", assignment),
             Statement::Expression(ref expression) => write!(f, "{}", expression),
             Statement::If(ref if_statement) => write!(f, "{}", if_statement),
@@ -289,11 +295,14 @@ mod tests {
                 identifier: Identifier {
                     identifier: "test".to_string(),
                 },
-                arguments: vec![Expression::Identifier(Identifier {
-                     identifier: "test".to_string(),
-                }), Expression::Literal(Literal {
-                     literal: "literal".to_string(),
-                })],
+                arguments: vec![
+                    Expression::Identifier(Identifier {
+                        identifier: "test".to_string(),
+                    }),
+                    Expression::Literal(Literal {
+                        literal: "literal".to_string(),
+                    }),
+                ],
             }.to_string(),
             "test(test,literal)"
         );
@@ -306,9 +315,7 @@ mod tests {
                 expression: Expression::Literal(Literal {
                     literal: "literal".to_string(),
                 }),
-                block: Block {
-                    statements: vec![],
-                },
+                block: Block { statements: vec![] },
             }.to_string(),
             "if literal { }"
         );
@@ -316,21 +323,14 @@ mod tests {
 
     #[test]
     fn block_empty() {
-        assert_eq!(
-            Block {
-                statements: vec![],
-            }.to_string(),
-            "{ }"
-        );
+        assert_eq!(Block { statements: vec![] }.to_string(), "{ }");
     }
 
     #[test]
     fn block_nested() {
         assert_eq!(
             Block {
-                statements: vec![Statement::Block(Block {
-                    statements: vec![]
-                })],
+                statements: vec![Statement::Block(Block { statements: vec![] })],
             }.to_string(),
             "{ { } }"
         );
@@ -367,13 +367,17 @@ mod tests {
     fn assignment_multi() {
         assert_eq!(
             Assignment {
-                identifiers: vec![Identifier {
-                    identifier: "a".to_string(),
-                }, Identifier {
-                    identifier: "b".to_string(),
-                }, Identifier {
-                    identifier: "c".to_string(),
-                }],
+                identifiers: vec![
+                    Identifier {
+                        identifier: "a".to_string(),
+                    },
+                    Identifier {
+                        identifier: "b".to_string(),
+                    },
+                    Identifier {
+                        identifier: "c".to_string(),
+                    },
+                ],
                 expression: Expression::Literal(Literal {
                     literal: "1".to_string(),
                 }),
@@ -414,13 +418,17 @@ mod tests {
     fn variabledeclaration_multi() {
         assert_eq!(
             VariableDeclaration {
-                identifiers: vec![Identifier {
-                    identifier: "a".to_string(),
-                }, Identifier {
-                    identifier: "b".to_string(),
-                }, Identifier {
-                    identifier: "c".to_string(),
-                }],
+                identifiers: vec![
+                    Identifier {
+                        identifier: "a".to_string(),
+                    },
+                    Identifier {
+                        identifier: "b".to_string(),
+                    },
+                    Identifier {
+                        identifier: "c".to_string(),
+                    },
+                ],
                 expression: Some(Expression::Literal(Literal {
                     literal: "1".to_string(),
                 })),
@@ -438,9 +446,7 @@ mod tests {
                 },
                 parameters: vec![],
                 returns: vec![],
-                block: Block {
-                    statements: vec![],
-                },
+                block: Block { statements: vec![] },
             }.to_string(),
             "function name() { }"
         );
@@ -457,9 +463,7 @@ mod tests {
                     identifier: "a".to_string(),
                 }],
                 returns: vec![],
-                block: Block {
-                    statements: vec![],
-                },
+                block: Block { statements: vec![] },
             }.to_string(),
             "function name(a) { }"
         );
@@ -476,9 +480,7 @@ mod tests {
                 returns: vec![Identifier {
                     identifier: "a".to_string(),
                 }],
-                block: Block {
-                    statements: vec![],
-                },
+                block: Block { statements: vec![] },
             }.to_string(),
             "function name() -> a { }"
         );
@@ -491,19 +493,23 @@ mod tests {
                 name: Identifier {
                     identifier: "name".to_string(),
                 },
-                parameters: vec![Identifier {
-                    identifier: "a".to_string(),
-                }, Identifier {
-                    identifier: "b".to_string(),
-                }],
-                returns: vec![Identifier {
-                    identifier: "c".to_string(),
-                }, Identifier {
-                    identifier: "d".to_string(),
-                }],
-                block: Block {
-                    statements: vec![],
-                },
+                parameters: vec![
+                    Identifier {
+                        identifier: "a".to_string(),
+                    },
+                    Identifier {
+                        identifier: "b".to_string(),
+                    },
+                ],
+                returns: vec![
+                    Identifier {
+                        identifier: "c".to_string(),
+                    },
+                    Identifier {
+                        identifier: "d".to_string(),
+                    },
+                ],
+                block: Block { statements: vec![] },
             }.to_string(),
             "function name(a, b) -> c, d { }"
         );
@@ -516,9 +522,7 @@ mod tests {
                 literal: Literal {
                     literal: "literal".to_string(),
                 },
-                block: Block {
-                    statements: vec![],
-                },
+                block: Block { statements: vec![] },
             }.to_string(),
             "case literal: { }"
         );
@@ -531,9 +535,7 @@ mod tests {
                 literal: Literal {
                     literal: "".to_string(),
                 },
-                block: Block {
-                    statements: vec![],
-                },
+                block: Block { statements: vec![] },
             }.to_string(),
             "default: { }"
         );
@@ -551,17 +553,13 @@ mod tests {
                         literal: Literal {
                             literal: "1".to_string(),
                         },
-                        block: Block {
-                            statements: vec![],
-                        }
+                        block: Block { statements: vec![] },
                     },
                     Case {
                         literal: Literal {
                             literal: "".to_string(),
                         },
-                        block: Block {
-                            statements: vec![],
-                        }
+                        block: Block { statements: vec![] },
                     },
                 ],
             }.to_string(),
@@ -573,18 +571,12 @@ mod tests {
     fn forloop() {
         assert_eq!(
             ForLoop {
-                pre: Block {
-                    statements: vec![],
-                },
+                pre: Block { statements: vec![] },
                 condition: Expression::Literal(Literal {
                     literal: "1".to_string(),
                 }),
-                post: Block {
-                    statements: vec![],
-                },
-                body: Block {
-                    statements: vec![],
-                }
+                post: Block { statements: vec![] },
+                body: Block { statements: vec![] },
             }.to_string(),
             "for { } 1 { } { }"
         );
