@@ -2,4 +2,9 @@
 name = "yultsur"
 version = "0.1.0"
 authors = ["Alex Beregszaszi <alex@rtfs.hu>"]
+repository = "https://github.com/axic/yultsur"
+homepage = "https://github.com/axic/yultsur"
 license = "GPL-3.0"
+readme = "README.md"
+description = "Yultsur (or Yülçür) is a toolkit for Yul."
+keywords = ["yul", "ethereum", "solidity"]
