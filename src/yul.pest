@@ -1,0 +1,75 @@
+block = { soi? ~ "{" ~ (statement)* ~ "}" ~ eoi? }
+
+statement = {
+	(block
+		| function_definition
+		| variable_declaration
+		| assignment
+		| expression
+		| switch
+		| for_loop
+		| if_statement
+		| break_continue)
+}
+
+function_definition = { "function" ~ identifier ~ "(" ~ (typed_identifier_list)? ~ ")" ~ ("->" ~ typed_identifier_list)? ~ block }
+
+variable_declaration = { "let" ~ typed_identifier_list ~ (":=" ~ expression)? }
+
+assignment = { identifier_list ~ ":=" ~ expression }
+
+expression = { function_call | identifier | literal }
+
+if_statement = { "if" ~ expression ~ block }
+
+switch = { "switch" ~ expression ~ ((case)+ ~ (default)? | default) }
+
+case = { "case" ~ literal ~ block }
+
+default = { "default" ~ block }
+
+for_loop = { "for" ~ block ~ expression ~ block ~ block }
+
+break_continue = { "break" | "continue" }
+
+function_call = { identifier ~ "(" ~ (expression ~ ("," ~ expression)*)? ~ ")" }
+
+identifier = @ { alpha ~ (alpha | digit)* }
+
+identifier_list = { identifier ~ ("," ~ identifier)* }
+
+type_name = { identifier | builtin_typename }
+
+builtin_typename = { "bool" | "u8" | "u32" | "u64" | "u128" | "u256" | "s8" | "s32" | "s64" | "s128" | "s256" } // FIXME: this can probably be simplified
+
+typed_identifier_list = { identifier ~ ":" ~ type_name ~ ("," ~ identifier ~ ":" ~ type_name)* }
+
+literal = {
+	(number_literal
+		| string_literal
+		| hex_literal
+		| true_literal
+		| false_literal)
+	~ ":"
+	~ type_name
+}
+
+number_literal = { hex_number | decimal_number }
+
+hex_literal = { "hex" ~ ("\"" ~ (('0'..'9' | 'a'..'f' | 'A'..'F'){2})* ~ "\"" | "\'" ~ (('0'..'9' | 'a'..'f' | 'A'..'F'){2})* ~ "\'") } // FIXME: can be refactored into "hex_byte"
+
+string_literal = { "\"" ~ ((!("\\" | "\n" | "\r" | "\"") ~ any) | "\\" ~ (!( "\n" ) ~ any))* ~ "\"" }
+
+true_literal = { "true" }
+
+false_literal = { "false" }
+
+hex_number = @ { "0x" ~ ('0'..'9' | 'a'..'f' | 'A'..'F')+ } // TODO: this may need to be flagged atomic to avoid something like "0x deadbeef"
+
+decimal_number = @ { digit+ }
+
+alpha = _ { 'a'..'z' | 'A'..'Z' }
+
+digit = _ { '0'..'9' }
+
+whitespace = _ { " " | "\t" | "\n" }
