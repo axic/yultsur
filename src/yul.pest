@@ -1,0 +1,55 @@
+contract = { soi ~ block ~ eoi }
+
+block = { "{" ~ statement* ~ "}" }
+
+statement = { block | function_definition | variable_declaration | assignment | expression | switch | for_loop | break_continue }
+
+function_definition = { "function" ~ identifier ~ "(" ~ typed_identifier_list? ~ ")" ~ ("->" ~ typed_identifier_list)? ~ block }
+
+variable_declaration = { "let" ~ typed_identifier_list ~ (":=" ~ expression)? }
+
+assignment = { identifier_list ~ ":=" ~ expression }
+
+expression = { function_call | identifier | literal }
+
+_if = { "if" ~ expression ~ block }
+
+switch = { "switch" ~ expression ~ case* ~ ("default" ~ block)? }
+
+case = { "case" ~ literal ~ block }
+
+for_loop = { "for" ~ block ~ expression ~ block ~ block }
+
+break_continue = @ { "break" | "continue" }
+
+function_call = { identifier ~ "(" ~ (expression ~ ("," ~ expression)*)? ~ ")" }
+
+identifier = @ { (alpha | "_") ~ (alpha | "_" | digit)* }
+
+identifier_list = { identifier ~ ("," ~ identifier)* }
+
+type_name = { identifier | builtin_type_name }
+
+builtin_type_name = @ { "bool" | (("u" | "s")? ~ "8" | "32" | "64" | "128" | "256") }
+
+typed_identifier_list = { identifier ~ ":" ~ type_name ~ ("," ~ identifier ~ ":" ~ type_name)* }
+
+literal = @ { (number_literal | string_literal | hex_literal | true_literal | false_literal) ~ ":" ~ type_name }
+
+number_literal = @ { hex_number | decimal_number }
+
+hex_literal = @ { "hex" ~ ( ("\"" ~ ((digit | hex_alpha){2})* ~ "\"") | ("\"" ~ ((digit | hex_alpha){2})* ~ "\"") ) }
+
+string_literal = { "\"" ~  "\"" }
+
+true_literal = @ { "true" }
+false_literal = @ { "false" }
+
+hex_number = @ { "0x" ~ hex_alpha+ }
+decimal_number = @ { digit+ }
+
+alpha = _ { 'a'..'z' | 'A'..'Z' }
+hex_alpha = _ { 'a'..'f' | 'A'..'F' }
+digit = _ { '0'..'9' }
+
+whitespace = _ { " " | "\t" | "\n" | "\r" }
