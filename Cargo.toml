@@ -8,3 +8,7 @@ license = "GPL-3.0"
 readme = "README.md"
 description = "Yultsur (or Yülçür) is a toolkit for Yul."
 keywords = ["yul", "ethereum", "solidity"]
+
+[dependencies]
+pest = "^1.0"
+pest_derive = "^1.0"
