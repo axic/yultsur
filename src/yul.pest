@@ -19,7 +19,7 @@ assignment = { identifier_list ~ ":=" ~ expression }
 
 expression = { function_call | identifier | literal }
 
-if = { "if" ~ expression ~ block }
+conditional = { "if" ~ expression ~ block }
 
 switch = { "switch" ~ expression ~ ((case)+ ~ (default)? | default) }
 
