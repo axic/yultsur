@@ -5,14 +5,15 @@ statement = {
 		| function_definition
 		| variable_declaration
 		| assignment
+		| if_statement
+		| for_loop
 		| expression
 		| switch
-		| for_loop
-		| if_statement
-		| break_continue)
+		| break_statement
+		| continue_statement)
 }
 
-function_definition = { "function" ~ identifier ~ "(" ~ (typed_identifier_list)? ~ ")" ~ ("->" ~ typed_identifier_list)? ~ block }
+function_definition = { "function" ~ identifier ~ "(" ~ (typed_parameter_list)? ~ ")" ~ ("->" ~ typed_identifier_list)? ~ block }
 
 variable_declaration = { "let" ~ typed_identifier_list ~ (":=" ~ expression)? }
 
@@ -30,7 +31,9 @@ default = { "default" ~ block }
 
 for_loop = { "for" ~ block ~ expression ~ block ~ block }
 
-break_continue = { "break" | "continue" }
+break_statement = { "break" }
+
+continue_statement = { "continue" }
 
 function_call = { identifier ~ "(" ~ (expression ~ ("," ~ expression)*)? ~ ")" }
 
@@ -38,11 +41,16 @@ identifier = @ { alpha ~ (alpha | digit)* }
 
 identifier_list = { identifier ~ ("," ~ identifier)* }
 
-type_name = { identifier | builtin_typename }
+type_name = { builtin_typename | identifier }
 
 builtin_typename = { "bool" | "u8" | "u32" | "u64" | "u128" | "u256" | "s8" | "s32" | "s64" | "s128" | "s256" } // FIXME: this can probably be simplified
 
-typed_identifier_list = { identifier ~ ":" ~ type_name ~ ("," ~ identifier ~ ":" ~ type_name)* }
+typed_parameter_list = { typed_identifier ~ ("," ~ typed_identifier)* }
+typed_identifier_list = { typed_identifier ~ ("," ~ typed_identifier)* }
+untyped_parameter_list = { identifier ~ ("," ~ identifier)* }
+untyped_identifier_list = { identifier ~ ("," ~ identifier)* }
+
+typed_identifier = { identifier ~ ":" ~ type_name }
 
 literal = {
 	(number_literal
