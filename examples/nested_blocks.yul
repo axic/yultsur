@@ -1,0 +1,1 @@
+{ function power(input:u256) -> result:u256 { { } } }
