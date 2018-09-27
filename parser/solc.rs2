@@ -1,0 +1,18 @@
+extern crate libc;
+use libc::{c_int, size_t};
+
+/*
+
+#[link(name = "solc", kind = "static")]
+extern {
+typedef void (*CStyleReadFileCallback)(char const* _path, char** o_contents, char** o_error);
+
+
+    fn solidity_compile(input: *const u8, read_callback: extern fn(*
+
+    fn char const* solidity_compile(char const* _input, CStyleReadFileCallback _readCallback) SOLC_NOEXCEPT;
+
+    fn snappy_max_compressed_length(source_length: size_t) -> size_t;
+
+}
+*/

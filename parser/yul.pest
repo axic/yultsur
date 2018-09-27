@@ -1,0 +1,16 @@
+yul = { soi ~ block ~ eoi }
+
+block = { "{" ~ whitespace ~ statement* ~ whitespace ~ "}" }
+
+statement = $ { (block | function_declaration) }
+
+function_declaration = { "function" ~ whitespace* ~ identifier ~ whitespace* ~ "()" }
+
+identifier = @ { alpha ~ (alpha | digit)* }
+
+number = @ { (digit)+ }
+
+alpha = _ { 'a'..'z' | 'A'..'Z' }
+digit = _ { '0'..'9' }
+
+whitespace = _ { " " | "\t" | "\n" }
