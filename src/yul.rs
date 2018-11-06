@@ -13,7 +13,7 @@ pub enum Type {
     Int64,
     Int32,
     Int8,
-    Custom(String),
+    Custom(Identifier),
 }
 
 #[derive(Hash, Clone, PartialEq, Debug)]
@@ -23,14 +23,17 @@ pub struct Block {
 
 #[derive(Hash, Clone, PartialEq, Debug)]
 pub struct Literal {
-    pub literal: String,
-    pub yultype: Option<Type>,
+    pub literal: Box<str>,
+    pub yultype: Type,
 }
 
 #[derive(Hash, Clone, PartialEq, Debug)]
-pub struct Identifier {
-    pub identifier: String,
-    pub yultype: Option<Type>,
+pub struct Identifier(pub Box<str>);
+
+#[derive(Hash, Clone, PartialEq, Debug)]
+pub struct TypedIdentifier {
+    pub identifier: Identifier,
+    pub yultype: Type,
 }
 
 #[derive(Hash, Clone, PartialEq, Debug)]
@@ -42,14 +45,14 @@ pub struct FunctionCall {
 #[derive(Hash, Clone, PartialEq, Debug)]
 pub struct FunctionDefinition {
     pub name: Identifier,
-    pub parameters: Vec<Identifier>,
-    pub returns: Vec<Identifier>,
+    pub parameters: Vec<TypedIdentifier>,
+    pub returns: Vec<TypedIdentifier>,
     pub block: Block,
 }
 
 #[derive(Hash, Clone, PartialEq, Debug)]
 pub struct VariableDeclaration {
-    pub identifiers: Vec<Identifier>,
+    pub identifiers: Vec<TypedIdentifier>,
     pub expression: Option<Expression>,
 }
 
@@ -125,86 +128,91 @@ impl fmt::Display for Type {
     }
 }
 
-impl Identifier {
-    pub fn new(identifier: &str) -> Self {
-        Identifier {
-            identifier: identifier.to_string(),
-            yultype: None,
-        }
+impl<S: Into<Box<str>>> From<S> for Identifier {
+    fn from(string: S) -> Self {
+        Identifier(string.into())
     }
 }
 
-impl Literal {
-    pub fn new(literal: &str) -> Self {
-        Literal {
-            literal: literal.to_string(),
-            yultype: None,
-        }
+impl Identifier {
+    pub fn new(identifier: &str) -> Self {
+        identifier.into()
     }
 }
+
+macro_rules! impl_literal_from {
+    ($( $yultype:ident : $type:ty ),*) => {
+        $(
+            impl From<$type> for Literal {
+                fn from(val: $type) -> Literal {
+                    Literal {
+                        literal: val.to_string().into(),
+                        yultype: Type::$yultype
+                    }
+                }
+            }
+        )*
+    }
+}
+
+impl_literal_from!(
+    Uint8:u8, Uint32:u16, Uint32:u32, Uint64:u64, Uint128:u128,
+    Int8:i8,  Int32:i16,  Int32:i32,  Int64:i64,  Int128:i128,
+    Bool:bool
+);
 
 impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "{}", self.literal));
-        if let Some(yultype) = &self.yultype {
-            write!(f, ":{}", yultype)
-        } else {
-            write!(f, "")
-        }
+        write!(f, "{}:{}", self.literal, self.yultype)
     }
 }
 
 impl fmt::Display for Identifier {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "{}", self.identifier));
-        if let Some(yultype) = &self.yultype {
-            write!(f, ":{}", yultype)
-        } else {
-            write!(f, "")
+        write!(f, "{}", self.0)
+    }
+}
+
+impl fmt::Display for TypedIdentifier {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}:{}", self.identifier, self.yultype)
+    }
+}
+
+fn write_list<T, I>(f: &mut fmt::Formatter, list: I) -> fmt::Result
+where
+    T: fmt::Display,
+    I: IntoIterator<Item = T>,
+{
+    let mut items = list.into_iter();
+
+    if let Some(item) = items.next() {
+        write!(f, "{}", item)?;
+
+        for item in items {
+            write!(f, ", {}", item)?;
         }
     }
+
+    Ok(())
 }
 
 impl fmt::Display for FunctionCall {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "{}(", self.identifier));
-        try!(write!(
-            f,
-            "{}",
-            self.arguments
-                .iter()
-                .map(|argument| format!("{}", argument))
-                .collect::<Vec<_>>()
-                .join(", ")
-        ));
+        write!(f, "{}(", self.identifier)?;
+        write_list(f, &self.arguments)?;
         write!(f, ")")
     }
 }
 
 impl fmt::Display for FunctionDefinition {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "function {}(", self.name));
-        try!(write!(
-            f,
-            "{}",
-            self.parameters
-                .iter()
-                .map(|identifier| format!("{}", identifier))
-                .collect::<Vec<_>>()
-                .join(", ")
-        ));
-        try!(write!(f, ")"));
+        write!(f, "function {}(", self.name)?;
+        write_list(f, &self.parameters)?;
+        write!(f, ")")?;
         if self.returns.len() > 0 {
-            try!(write!(f, " -> "));
-            try!(write!(
-                f,
-                "{}",
-                self.returns
-                    .iter()
-                    .map(|identifier| format!("{}", identifier))
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            ));
+            write!(f, " -> ")?;
+            write_list(f, &self.returns)?;
         }
         write!(f, " {}", self.block)
     }
@@ -216,20 +224,12 @@ impl fmt::Display for VariableDeclaration {
         if self.identifiers.len() == 0 {
             panic!("VariableDeclaration must have identifiers")
         }
-        try!(write!(f, "let "));
-        try!(write!(
-            f,
-            "{}",
-            self.identifiers
-                .iter()
-                .map(|identifier| format!("{}", identifier))
-                .collect::<Vec<_>>()
-                .join(", ")
-        ));
+        write!(f, "let ")?;
+        write_list(f, &self.identifiers)?;
         if let Some(expression) = &self.expression {
             write!(f, " := {}", expression)
         } else {
-            write!(f, "")
+            Ok(())
         }
     }
 }
@@ -240,15 +240,7 @@ impl fmt::Display for Assignment {
         if self.identifiers.len() == 0 {
             panic!("Assignment must have identifiers")
         }
-        try!(write!(
-            f,
-            "{}",
-            self.identifiers
-                .iter()
-                .map(|identifier| format!("{}", identifier))
-                .collect::<Vec<_>>()
-                .join(", ")
-        ));
+        write_list(f, &self.identifiers)?;
         write!(f, " := {}", self.expression)
     }
 }
@@ -285,11 +277,11 @@ impl fmt::Display for Case {
 
 impl fmt::Display for Switch {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "switch {} ", self.expression));
+        write!(f, "switch {} ", self.expression)?;
         for case in &self.cases {
-            try!(write!(f, "{} ", case));
+            write!(f, "{} ", case)?;
         }
-        write!(f, "")
+        Ok(())
     }
 }
 
@@ -324,9 +316,9 @@ impl fmt::Display for Statement {
 
 impl fmt::Display for Block {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "{{"));
-        for (_, statement) in self.statements.iter().enumerate() {
-            try!(write!(f, " {}", statement));
+        write!(f, "{{")?;
+        for statement in &self.statements {
+            write!(f, " {}", statement)?;
         }
         write!(f, " }}")
     }
@@ -340,19 +332,8 @@ mod tests {
     fn literal() {
         assert_eq!(
             Literal {
-                literal: "testliteral".to_string(),
-                yultype: None,
-            }.to_string(),
-            "testliteral"
-        );
-    }
-
-    #[test]
-    fn literal_typed() {
-        assert_eq!(
-            Literal {
-                literal: "testliteral".to_string(),
-                yultype: Some(Type::Uint256),
+                literal: "testliteral".into(),
+                yultype: Type::Uint256,
             }.to_string(),
             "testliteral:u256"
         );
@@ -362,8 +343,8 @@ mod tests {
     fn literal_custom_typed() {
         assert_eq!(
             Literal {
-                literal: "testliteral".to_string(),
-                yultype: Some(Type::Custom("memptr".to_string())),
+                literal: "testliteral".into(),
+                yultype: Type::Custom("memptr".into()),
             }.to_string(),
             "testliteral:memptr"
         );
@@ -372,31 +353,28 @@ mod tests {
     #[test]
     fn identifier() {
         assert_eq!(
-            Identifier {
-                identifier: "testidentifier".to_string(),
-                yultype: None,
-            }.to_string(),
+            Identifier::from("testidentifier").to_string(),
             "testidentifier"
         );
     }
 
     #[test]
-    fn identifier_typed() {
+    fn typed_identifier() {
         assert_eq!(
-            Identifier {
-                identifier: "testidentifier".to_string(),
-                yultype: Some(Type::Uint256),
+            TypedIdentifier {
+                identifier: "testidentifier".into(),
+                yultype: Type::Uint256,
             }.to_string(),
             "testidentifier:u256"
         );
     }
 
     #[test]
-    fn identifierr_custom_typed() {
+    fn typed_identifier_custom() {
         assert_eq!(
-            Identifier {
-                identifier: "testidentifier".to_string(),
-                yultype: Some(Type::Custom("memptr".to_string())),
+            TypedIdentifier {
+                identifier: "testidentifier".into(),
+                yultype: Type::Custom("memptr".into()),
             }.to_string(),
             "testidentifier:memptr"
         );
@@ -406,22 +384,13 @@ mod tests {
     fn functioncall() {
         assert_eq!(
             FunctionCall {
-                identifier: Identifier {
-                    identifier: "test".to_string(),
-                    yultype: None,
-                },
+                identifier: "fun".into(),
                 arguments: vec![
-                    Expression::Identifier(Identifier {
-                        identifier: "test".to_string(),
-                        yultype: None,
-                    }),
-                    Expression::Literal(Literal {
-                        literal: "literal".to_string(),
-                        yultype: None,
-                    }),
+                    Expression::Identifier("test".into()),
+                    Expression::Literal(true.into()),
                 ],
             }.to_string(),
-            "test(test, literal)"
+            "fun(test, true:bool)"
         );
     }
 
@@ -429,13 +398,10 @@ mod tests {
     fn if_statement() {
         assert_eq!(
             If {
-                expression: Expression::Literal(Literal {
-                    literal: "literal".to_string(),
-                    yultype: None,
-                }),
+                expression: Expression::Literal(true.into()),
                 block: Block { statements: vec![] },
             }.to_string(),
-            "if literal { }"
+            "if true:bool { }"
         );
     }
 
@@ -458,12 +424,9 @@ mod tests {
     fn block_literal() {
         assert_eq!(
             Block {
-                statements: vec![Statement::Expression(Expression::Literal(Literal {
-                    literal: "literal".to_string(),
-                    yultype: None,
-                }))],
+                statements: vec![Statement::Expression(Expression::Literal(true.into()))],
             }.to_string(),
-            "{ literal }"
+            "{ true:bool }"
         );
     }
 
@@ -471,16 +434,10 @@ mod tests {
     fn assignment_single() {
         assert_eq!(
             Assignment {
-                identifiers: vec![Identifier {
-                    identifier: "a".to_string(),
-                    yultype: None,
-                }],
-                expression: Expression::Literal(Literal {
-                    literal: "1".to_string(),
-                    yultype: None,
-                }),
+                identifiers: vec![Identifier::from("a")],
+                expression: Expression::Literal(1u8.into()),
             }.to_string(),
-            "a := 1"
+            "a := 1:u8"
         );
     }
 
@@ -489,25 +446,13 @@ mod tests {
         assert_eq!(
             Assignment {
                 identifiers: vec![
-                    Identifier {
-                        identifier: "a".to_string(),
-                        yultype: None,
-                    },
-                    Identifier {
-                        identifier: "b".to_string(),
-                        yultype: None,
-                    },
-                    Identifier {
-                        identifier: "c".to_string(),
-                        yultype: None,
-                    },
+                    Identifier::from("a"),
+                    Identifier::from("b"),
+                    Identifier::from("c"),
                 ],
-                expression: Expression::Literal(Literal {
-                    literal: "1".to_string(),
-                    yultype: None,
-                }),
+                expression: Expression::Literal(1u8.into()),
             }.to_string(),
-            "a, b, c := 1"
+            "a, b, c := 1:u8"
         );
     }
 
@@ -515,13 +460,13 @@ mod tests {
     fn variabledeclaration_empty() {
         assert_eq!(
             VariableDeclaration {
-                identifiers: vec![Identifier {
-                    identifier: "a".to_string(),
-                    yultype: None,
+                identifiers: vec![TypedIdentifier {
+                    identifier: "a".into(),
+                    yultype: Type::Uint8,
                 }],
                 expression: None,
             }.to_string(),
-            "let a"
+            "let a:u8"
         );
     }
 
@@ -529,16 +474,13 @@ mod tests {
     fn variabledeclaration_single() {
         assert_eq!(
             VariableDeclaration {
-                identifiers: vec![Identifier {
-                    identifier: "a".to_string(),
-                    yultype: None,
+                identifiers: vec![TypedIdentifier {
+                    identifier: "a".into(),
+                    yultype: Type::Uint8,
                 }],
-                expression: Some(Expression::Literal(Literal {
-                    literal: "1".to_string(),
-                    yultype: None,
-                })),
+                expression: Some(Expression::Literal(1u8.into())),
             }.to_string(),
-            "let a := 1"
+            "let a:u8 := 1:u8"
         );
     }
 
@@ -547,25 +489,22 @@ mod tests {
         assert_eq!(
             VariableDeclaration {
                 identifiers: vec![
-                    Identifier {
-                        identifier: "a".to_string(),
-                        yultype: None,
+                    TypedIdentifier {
+                        identifier: "a".into(),
+                        yultype: Type::Uint8,
                     },
-                    Identifier {
-                        identifier: "b".to_string(),
-                        yultype: None,
+                    TypedIdentifier {
+                        identifier: "b".into(),
+                        yultype: Type::Uint8,
                     },
-                    Identifier {
-                        identifier: "c".to_string(),
-                        yultype: None,
+                    TypedIdentifier {
+                        identifier: "c".into(),
+                        yultype: Type::Uint8,
                     },
                 ],
-                expression: Some(Expression::Literal(Literal {
-                    literal: "1".to_string(),
-                    yultype: None,
-                })),
+                expression: Some(Expression::Literal(1u8.into())),
             }.to_string(),
-            "let a, b, c := 1"
+            "let a:u8, b:u8, c:u8 := 1:u8"
         );
     }
 
@@ -573,10 +512,7 @@ mod tests {
     fn functiondefinition_basic() {
         assert_eq!(
             FunctionDefinition {
-                name: Identifier {
-                    identifier: "name".to_string(),
-                    yultype: None,
-                },
+                name: "name".into(),
                 parameters: vec![],
                 returns: vec![],
                 block: Block { statements: vec![] },
@@ -589,18 +525,15 @@ mod tests {
     fn functiondefinition_single_arg() {
         assert_eq!(
             FunctionDefinition {
-                name: Identifier {
-                    identifier: "name".to_string(),
-                    yultype: None,
-                },
-                parameters: vec![Identifier {
-                    identifier: "a".to_string(),
-                    yultype: None,
+                name: "name".into(),
+                parameters: vec![TypedIdentifier {
+                    identifier: "a".into(),
+                    yultype: Type::Bool,
                 }],
                 returns: vec![],
                 block: Block { statements: vec![] },
             }.to_string(),
-            "function name(a) { }"
+            "function name(a:bool) { }"
         );
     }
 
@@ -608,18 +541,15 @@ mod tests {
     fn functiondefinition_single_ret() {
         assert_eq!(
             FunctionDefinition {
-                name: Identifier {
-                    identifier: "name".to_string(),
-                    yultype: None,
-                },
+                name: "name".into(),
                 parameters: vec![],
-                returns: vec![Identifier {
-                    identifier: "a".to_string(),
-                    yultype: None,
+                returns: vec![TypedIdentifier {
+                    identifier: "a".into(),
+                    yultype: Type::Bool,
                 }],
                 block: Block { statements: vec![] },
             }.to_string(),
-            "function name() -> a { }"
+            "function name() -> a:bool { }"
         );
     }
 
@@ -627,33 +557,30 @@ mod tests {
     fn functiondefinition_multi() {
         assert_eq!(
             FunctionDefinition {
-                name: Identifier {
-                    identifier: "name".to_string(),
-                    yultype: None,
-                },
+                name: "name".into(),
                 parameters: vec![
-                    Identifier {
-                        identifier: "a".to_string(),
-                        yultype: None,
+                    TypedIdentifier {
+                        identifier: "a".into(),
+                        yultype: Type::Bool,
                     },
-                    Identifier {
-                        identifier: "b".to_string(),
-                        yultype: None,
+                    TypedIdentifier {
+                        identifier: "b".into(),
+                        yultype: Type::Bool,
                     },
                 ],
                 returns: vec![
-                    Identifier {
-                        identifier: "c".to_string(),
-                        yultype: None,
+                    TypedIdentifier {
+                        identifier: "c".into(),
+                        yultype: Type::Bool,
                     },
-                    Identifier {
-                        identifier: "d".to_string(),
-                        yultype: None,
+                    TypedIdentifier {
+                        identifier: "d".into(),
+                        yultype: Type::Bool,
                     },
                 ],
                 block: Block { statements: vec![] },
             }.to_string(),
-            "function name(a, b) -> c, d { }"
+            "function name(a:bool, b:bool) -> c:bool, d:bool { }"
         );
     }
 
@@ -661,13 +588,10 @@ mod tests {
     fn case() {
         assert_eq!(
             Case {
-                literal: Some(Literal {
-                    literal: "literal".to_string(),
-                    yultype: None,
-                }),
+                literal: Some(42u16.into()), // will be cast to u32 in Yul
                 block: Block { statements: vec![] },
             }.to_string(),
-            "case literal { }"
+            "case 42:u32 { }"
         );
     }
 
@@ -687,15 +611,12 @@ mod tests {
         assert_eq!(
             Switch {
                 expression: Expression::Literal(Literal {
-                    literal: "3".to_string(),
-                    yultype: None,
+                    literal: "3".into(),
+                    yultype: Type::Uint8,
                 }),
                 cases: vec![
                     Case {
-                        literal: Some(Literal {
-                            literal: "1".to_string(),
-                            yultype: None,
-                        }),
+                        literal: Some(1u8.into()),
                         block: Block { statements: vec![] },
                     },
                     Case {
@@ -704,7 +625,7 @@ mod tests {
                     },
                 ],
             }.to_string(),
-            "switch 3 case 1 { } default { } "
+            "switch 3:u8 case 1:u8 { } default { } "
         );
     }
 
@@ -713,14 +634,11 @@ mod tests {
         assert_eq!(
             ForLoop {
                 pre: Block { statements: vec![] },
-                condition: Expression::Literal(Literal {
-                    literal: "1".to_string(),
-                    yultype: None,
-                }),
+                condition: Expression::Literal(1u8.into()),
                 post: Block { statements: vec![] },
                 body: Block { statements: vec![] },
             }.to_string(),
-            "for { } 1 { } { }"
+            "for { } 1:u8 { } { }"
         );
     }
 }
