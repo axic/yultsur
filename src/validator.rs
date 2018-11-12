@@ -111,6 +111,21 @@ mod tests {
     use super::*;
 
     #[test]
+    fn identifiers() {
+        assert!(Identifier::new("foo").validate(true).is_ok());
+        assert!(Identifier::new("Foo").validate(true).is_ok());
+        assert!(Identifier::new("_foo").validate(true).is_ok());
+        assert!(Identifier::new("$foo").validate(true).is_ok());
+        assert!(Identifier::new("f00").validate(true).is_ok());
+
+        assert!(Identifier::new("foo_bar").validate(true).is_ok());
+        assert!(Identifier::new("FooBar").validate(true).is_ok());
+
+        assert!(Identifier::new("1foo").validate(true).is_err());
+        assert!(Identifier::new("#foo").validate(true).is_err());
+    }
+
+    #[test]
     fn basic_type() {
         assert!(Type::Bool.validate(true).is_ok(), "");
     }
