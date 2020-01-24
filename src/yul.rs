@@ -40,6 +40,12 @@ pub struct FunctionCall {
 }
 
 #[derive(Hash, Clone, PartialEq, Debug)]
+pub struct Object {
+    pub name: Identifier,
+    pub block: Block,
+}
+
+#[derive(Hash, Clone, PartialEq, Debug)]
 pub struct FunctionDefinition {
     pub name: Identifier,
     pub parameters: Vec<Identifier>,
@@ -95,6 +101,7 @@ pub struct ForLoop {
 #[derive(Hash, Clone, PartialEq, Debug)]
 pub enum Statement {
     Block(Block),
+    Object(Object),
     FunctionDefinition(FunctionDefinition),
     VariableDeclaration(VariableDeclaration),
     Assignment(Assignment),
@@ -178,6 +185,12 @@ impl fmt::Display for FunctionCall {
                 .join(", ")
         ));
         write!(f, ")")
+    }
+}
+
+impl fmt::Display for Object {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { 
+        write!(f, "object \"{}\" {}", self.name, self.block)
     }
 }
 
@@ -307,6 +320,7 @@ impl fmt::Display for Statement {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Statement::Block(ref block) => write!(f, "{}", block),
+            Statement::Object(ref contract) => write!(f, "{}", contract),
             Statement::FunctionDefinition(ref function) => write!(f, "{}", function),
             Statement::VariableDeclaration(ref variabledeclaration) => {
                 write!(f, "{}", variabledeclaration)
@@ -568,6 +582,21 @@ mod tests {
             "let a, b, c := 1"
         );
     }
+
+    #[test]
+    fn contractdefinition_basic() {
+        assert_eq!(
+            Object {
+                name: Identifier {
+                    identifier: "Name".to_string(),
+                    yultype: None,
+                },
+                block: Block { statements: vec![] },
+            }.to_string(),
+            "object \"Name\" { }"
+        );
+    }
+
 
     #[test]
     fn functiondefinition_basic() {
