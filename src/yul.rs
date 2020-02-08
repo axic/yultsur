@@ -46,6 +46,11 @@ pub struct Object {
 }
 
 #[derive(Hash, Clone, PartialEq, Debug)]
+pub struct Code {
+    pub block: Block,
+}
+
+#[derive(Hash, Clone, PartialEq, Debug)]
 pub struct FunctionDefinition {
     pub name: Identifier,
     pub parameters: Vec<Identifier>,
@@ -102,6 +107,7 @@ pub struct ForLoop {
 pub enum Statement {
     Block(Block),
     Object(Object),
+    Code(Code),
     FunctionDefinition(FunctionDefinition),
     VariableDeclaration(VariableDeclaration),
     Assignment(Assignment),
@@ -189,8 +195,14 @@ impl fmt::Display for FunctionCall {
 }
 
 impl fmt::Display for Object {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { 
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "object \"{}\" {}", self.name, self.block)
+    }
+}
+
+impl fmt::Display for Code {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "code {}", self.block)
     }
 }
 
@@ -320,7 +332,8 @@ impl fmt::Display for Statement {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Statement::Block(ref block) => write!(f, "{}", block),
-            Statement::Object(ref contract) => write!(f, "{}", contract),
+            Statement::Object(ref object) => write!(f, "{}", object),
+            Statement::Code(ref code) => write!(f, "{}", code),
             Statement::FunctionDefinition(ref function) => write!(f, "{}", function),
             Statement::VariableDeclaration(ref variabledeclaration) => {
                 write!(f, "{}", variabledeclaration)
@@ -584,7 +597,7 @@ mod tests {
     }
 
     #[test]
-    fn contractdefinition_basic() {
+    fn object_basic() {
         assert_eq!(
             Object {
                 name: Identifier {
@@ -597,6 +610,15 @@ mod tests {
         );
     }
 
+    #[test]
+    fn code_basic() {
+        assert_eq!(
+            Code {
+                block: Block { statements: vec![] },
+            }.to_string(),
+            "code { }"
+        );
+    }
 
     #[test]
     fn functiondefinition_basic() {
