@@ -197,7 +197,7 @@ impl fmt::Display for FunctionCall {
 
 impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "object \"{}\" {{ {} }}", self.name, self.code)
+        write!(f, "object \"{}\" {{ {} {} }}", self.name, self.code, self.objects.iter().map(|o| o.to_string()).collect::<Vec<String>>().join(" "))
     }
 }
 
@@ -606,9 +606,15 @@ mod tests {
                     yultype: None,
                 },
                 code: Code { block: Block { statements: vec![] } },
-                objects: vec![]
+                objects: vec![
+                    Object { 
+                        name: Identifier { identifier: "Test".to_string(), yultype: None },
+                        code: Code { block: Block { statements: vec![] } },
+                        objects: vec![]
+                    }
+                ]
             }.to_string(),
-            "object \"Name\" { code { } }"
+            "object \"Name\" { code { } object \"Test\" { code { }  } }"
         );
     }
 
