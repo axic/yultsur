@@ -1,28 +1,33 @@
 use crate::yul;
 
 /// Creates a Yul literal.
+#[macro_export]
 macro_rules! literal {
     {[$i:ident]} => {$i};
     {$l:literal} => {yul::Literal { literal: stringify!($l).to_string(), yultype: None }};
 }
 
 /// Creates a Yul literal expression.
+#[macro_export]
 macro_rules! literal_expression {
     {$($tts:tt)*} => {yul::Expression::Literal(literal!($($tts)*))};
 }
 
 /// Creates a Yul identifier.
+#[macro_export]
 macro_rules! identifier {
     {[$i:ident]} => {$i};
     {$l:ident} => {yul::Identifier { identifier: stringify!($l).to_string(), yultype: None }};
 }
 
 /// Creates a Yul identifier expression.
+#[macro_export]
 macro_rules! identifier_expression {
     {$($tts:tt)*} => {yul::Expression::Identifier(identifier!($($tts)*))};
 }
 
 /// Creates a Yul function call.
+#[macro_export]
 macro_rules! function_call {
     {[$i:ident]} => {$i};
     {$name:ident($($arg:tt),*)} => {
@@ -40,11 +45,13 @@ macro_rules! function_call {
 }
 
 /// Creates a function call expression.
+#[macro_export]
 macro_rules! function_call_expression {
     {$($tts:tt)*} => {yul::Expression::FunctionCall(function_call!($($tts)*))};
 }
 
 /// Creates a function call statement.
+#[macro_export]
 macro_rules! function_call_statement {
     {$($tts:tt)*} => {yul::Statement::Expression(
         yul::Expression::FunctionCall(function_call!($($tts)*))
@@ -52,6 +59,7 @@ macro_rules! function_call_statement {
 }
 
 /// Creates a Yul expression.
+#[macro_export]
 macro_rules! expression {
     {[$i:ident]} => {$i};
     {$l:literal} => {literal_expression!{$l}};
@@ -60,6 +68,7 @@ macro_rules! expression {
 }
 
 /// Creates a Yul variable declaration statement.
+#[macro_export]
 macro_rules! variable_declaration {
     {let $name:ident := $($tts:tt)+} => {
         yul::Statement::VariableDeclaration(yul::VariableDeclaration {
@@ -70,6 +79,7 @@ macro_rules! variable_declaration {
 }
 
 /// Creates a Yul assignment statement.
+#[macro_export]
 macro_rules! assignment {
     {$name:ident := $($tts:tt)+} => {
         yul::Statement::Assignment(yul::Assignment {
