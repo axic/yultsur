@@ -72,7 +72,7 @@ macro_rules! expression {
 /// Creates a Yul variable declaration statement.
 #[macro_export]
 macro_rules! variable_declaration {
-    {let $name:ident := $($tts:tt)+} => {
+    {let $name:tt := $($tts:tt)+} => {
         yul::Statement::VariableDeclaration(yul::VariableDeclaration {
             identifiers: vec![identifier!{$name}],
             expression: Some(expression!{$($tts)*})
@@ -83,7 +83,7 @@ macro_rules! variable_declaration {
 /// Creates a Yul assignment statement.
 #[macro_export]
 macro_rules! assignment {
-    {$name:ident := $($tts:tt)+} => {
+    {$name:tt := $($tts:tt)+} => {
         yul::Statement::Assignment(yul::Assignment {
             identifiers: vec![identifier!{$name}],
             expression: expression!{$($tts)*}
@@ -221,6 +221,16 @@ mod tests {
         assert_eq!(
             variable_declaration!{let foo := foo("bar", [food])}.to_string(),
             r#"let foo := foo("bar", food("taco", apple))"#
+        )
+    }
+
+    #[test]
+    fn test_variable_declaration_identifier_node () {
+        let foo = identifier!(foo);
+
+        assert_eq!(
+            variable_declaration!{let [foo] := bar("baz")}.to_string(),
+            r#"let foo := bar("baz")"#
         )
     }
 
