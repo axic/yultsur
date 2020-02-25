@@ -62,8 +62,10 @@ macro_rules! function_call_statement {
 #[macro_export]
 macro_rules! expression {
     {[$i:ident]} => {$i};
+    {($($tts:tt)+)} => {expression!($($tts)*)};
     {$l:literal} => {literal_expression!{$l}};
     {$i:ident} => {identifier_expression!{$i}};
+    // TODO: Match function call.
     {$($tts:tt)*} => {function_call_expression!($($tts)*)};
 }
 
@@ -218,6 +220,14 @@ mod tests {
 
         assert_eq!(
             variable_declaration!{let foo := foo("bar", [food])}.to_string(),
+            r#"let foo := foo("bar", food("taco", apple))"#
+        )
+    }
+
+    #[test]
+    fn test_variable_declaration_function_nested_raw () {
+        assert_eq!(
+            variable_declaration!{let foo := foo("bar", (food("taco", apple)))}.to_string(),
             r#"let foo := foo("bar", food("taco", apple))"#
         )
     }
