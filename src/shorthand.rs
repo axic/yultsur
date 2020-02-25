@@ -118,7 +118,7 @@ macro_rules! block {
 /// Creates a Yul function definition.
 #[macro_export]
 macro_rules! function_definition {
-    {function $name:ident($($param:tt),*) -> $returns:ident {$($statement:tt)*}} => {
+    {function $name:ident($($param:tt),*) $(-> $returns:ident)? {$($statement:tt)*}} => {
         yul::Statement::FunctionDefinition(yul::FunctionDefinition {
             name: identifier!{$name},
             parameters: {
@@ -128,7 +128,13 @@ macro_rules! function_definition {
                 )*
                 params
             },
-            returns: vec![identifier!{$returns}],
+            returns: {
+                let mut returns = vec![];
+                $(
+                    returns.push(identifier!{$returns});
+                )*
+                returns
+            },
             block: block!{$($statement)*},
         })
     };
@@ -328,6 +334,23 @@ mod tests {
             }
             .to_string(),
             r#"function foo(bit, coin) -> bar { let baz := add(bit, coin) bar := hello_world(baz, "hi") }"#
+        )
+    }
+
+
+    #[test]
+    fn function_definition_no_return() {
+        let bit = identifier! {bit};
+
+        assert_eq!(
+            function_definition! {
+                function foo([bit], coin) {
+                    (let baz := add(bit, coin))
+                    (bar := hello_world(baz, "hi"))
+                }
+            }
+                .to_string(),
+            r#"function foo(bit, coin) { let baz := add(bit, coin) bar := hello_world(baz, "hi") }"#
         )
     }
 }
