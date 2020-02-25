@@ -91,6 +91,7 @@ macro_rules! assignment {
 }
 
 /// Creates a Yul statement.
+#[macro_export]
 macro_rules! statement {
     {($($tts:tt)+)} => {statement!($($tts)*)};
     {$name:ident($($arg:tt)*)} => {function_call_statement!{$name($($arg)+)}};
@@ -98,7 +99,8 @@ macro_rules! statement {
     {$name:tt := $($expr:tt)+} => {assignment!{$name := $($expr)+}};
 }
 
-/// Creates a Yul block from zero or more statements.
+/// Creates a Yul block.
+#[macro_export]
 macro_rules! block {
     {$($statement:tt)*} => {
         yul::Block {
@@ -113,6 +115,8 @@ macro_rules! block {
     };
 }
 
+/// Creates a Yul function definition.
+#[macro_export]
 macro_rules! function_definition {
     {function $name:ident($($param:tt),*) -> $returns:ident {$($statement:tt)*}} => {
         yul::Statement::FunctionDefinition(yul::FunctionDefinition {
