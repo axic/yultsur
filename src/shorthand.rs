@@ -61,12 +61,11 @@ macro_rules! function_call_statement {
 /// Creates a Yul expression.
 #[macro_export]
 macro_rules! expression {
-    {[$i:ident]} => {$i};
     {($($tts:tt)+)} => {expression!($($tts)*)};
+    {[$i:ident]} => {$i};
     {$l:literal} => {literal_expression!{$l}};
     {$i:ident} => {identifier_expression!{$i}};
-    // TODO: Match function call.
-    {$($tts:tt)*} => {function_call_expression!($($tts)*)};
+    {$name:ident($($arg:tt)*)} => {function_call_expression! {$name($($arg)+)}};
 }
 
 /// Creates a Yul variable declaration statement.
@@ -83,10 +82,50 @@ macro_rules! variable_declaration {
 /// Creates a Yul assignment statement.
 #[macro_export]
 macro_rules! assignment {
-    {$name:tt := $($tts:tt)+} => {
+    {$name:tt := $($expr:tt)+} => {
         yul::Statement::Assignment(yul::Assignment {
             identifiers: vec![identifier!{$name}],
-            expression: expression!{$($tts)*}
+            expression: expression!{$($expr)*}
+        })
+    };
+}
+
+/// Creates a Yul statement.
+macro_rules! statement {
+    {($($tts:tt)+)} => {statement!($($tts)*)};
+    {$name:ident($($arg:tt)*)} => {function_call_statement!{$name($($arg)+)}};
+    {let $name:tt := $($expr:tt)+} => {variable_declaration!{let $name := $($expr)+}};
+    {$name:tt := $($expr:tt)+} => {assignment!{$name := $($expr)+}};
+}
+
+/// Creates a Yul block from zero or more statements.
+macro_rules! block {
+    {$($statement:tt)*} => {
+        yul::Block {
+            statements: {
+                let mut statements = vec![];
+                $(
+                    statements.push(statement!{$statement});
+                )*
+                statements
+            }
+        }
+    };
+}
+
+macro_rules! function_definition {
+    {function $name:ident($($param:tt),*) -> $returns:ident {$($statement:tt)*}} => {
+        yul::Statement::FunctionDefinition(yul::FunctionDefinition {
+            name: identifier!{$name},
+            parameters: {
+                let mut params = vec![];
+                $(
+                    params.push(identifier!{$param});
+                )*
+                params
+            },
+            returns: vec![identifier!{$returns}],
+            block: block!{$($statement)*},
         })
     };
 }
@@ -247,6 +286,65 @@ mod tests {
         assert_eq!(
             assignment!{foo := 42}.to_string(),
             "foo := 42"
+        )
+    }
+
+    #[test]
+    fn test_statement_function() {
+        let _42 = expression!{42};
+        let biz = function_call_expression!{biz(bit, coin, [_42])};
+        assert_eq!(
+            statement!{
+                bar(
+                    "ding",
+                     dong,
+                     [biz],
+                     (farm(cow, "sheep"))
+                )
+            }.to_string(),
+            r#"bar("ding", dong, biz(bit, coin, 42), farm(cow, "sheep"))"#
+        )
+    }
+
+    #[test]
+    fn test_statement_variable_declaration() {
+        assert_eq!(
+            statement!{let foo := bar("ding", dong)}.to_string(),
+            r#"let foo := bar("ding", dong)"#
+        )
+    }
+
+    #[test]
+    fn test_statement_assignment() {
+        assert_eq!(
+            statement!{foo := 42}.to_string(),
+            "foo := 42"
+        )
+    }
+
+    #[test]
+    fn test_block() {
+        assert_eq!(
+            block! {
+                (let foo := 42)
+                (bar(foo))
+            }.to_string(),
+            "{ let foo := 42 bar(foo) }"
+        )
+    }
+
+    #[test]
+    fn function_definition() {
+        let bit = identifier!{bit};
+
+        assert_eq!(
+            function_definition! {
+                function foo([bit], coin) -> bar {
+                    (let baz := add(bit, coin))
+                    (bar := hello_world(baz, "hi"))
+                }
+            }.to_string(),
+            r#"function foo(bit, coin) -> bar { let baz := add(bit, coin) bar := hello_world(baz, "hi") }"#
         )
     }
 }
