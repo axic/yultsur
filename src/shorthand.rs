@@ -135,173 +135,153 @@ mod tests {
     use crate::yul;
 
     #[test]
-    fn test_literal_string () {
-        assert_eq!(
-            literal!{"foo"}.to_string(),
-            r#""foo""#
-        )
+    fn test_literal_string() {
+        assert_eq!(literal! {"foo"}.to_string(), r#""foo""#)
     }
 
     #[test]
-    fn test_literal_num () {
-        assert_eq!(
-            literal!{42}.to_string(),
-            "42"
-        )
+    fn test_literal_num() {
+        assert_eq!(literal! {42}.to_string(), "42")
     }
 
     #[test]
-    fn test_literal_node () {
-        let foo = yul::Literal { literal: r#""bar""#.to_string(), yultype: None };
-        assert_eq!(
-            literal!{[foo]}.to_string(),
-            r#""bar""#
-        )
+    fn test_literal_node() {
+        let foo = yul::Literal {
+            literal: r#""bar""#.to_string(),
+            yultype: None,
+        };
+        assert_eq!(literal! {[foo]}.to_string(), r#""bar""#)
     }
 
     #[test]
-    fn test_literal_expression_string () {
-        assert_eq!(
-            literal_expression!{"foo"}.to_string(),
-            r#""foo""#
-        )
+    fn test_literal_expression_string() {
+        assert_eq!(literal_expression! {"foo"}.to_string(), r#""foo""#)
     }
 
     #[test]
-    fn test_expression_literal () {
-        assert_eq!(
-            expression!{"foo"}.to_string(),
-            r#""foo""#
-        )
+    fn test_expression_literal() {
+        assert_eq!(expression! {"foo"}.to_string(), r#""foo""#)
     }
 
     #[test]
-    fn test_expression_node () {
+    fn test_expression_node() {
         let node = literal_expression!("foobar");
 
-        assert_eq!(
-            expression!{[node]}.to_string(),
-            r#""foobar""#
-        )
+        assert_eq!(expression! {[node]}.to_string(), r#""foobar""#)
     }
 
     #[test]
-    fn test_expression_identifier () {
-        assert_eq!(
-            expression!{foo}.to_string(),
-            "foo"
-        )
+    fn test_expression_identifier() {
+        assert_eq!(expression! {foo}.to_string(), "foo")
     }
 
     #[test]
-    fn test_function_call () {
+    fn test_function_call() {
         assert_eq!(
-            function_call!{foo("string", bar, 42)}.to_string(),
+            function_call! {foo("string", bar, 42)}.to_string(),
             r#"foo("string", bar, 42)"#
         )
     }
 
-   #[test]
-    fn test_function_call_node () {
+    #[test]
+    fn test_function_call_node() {
         let node = literal_expression!("foobar");
 
         assert_eq!(
-            function_call!{foo("string", bar, 42, [node])}.to_string(),
+            function_call! {foo("string", bar, 42, [node])}.to_string(),
             r#"foo("string", bar, 42, "foobar")"#
         )
     }
 
     #[test]
-    fn test_function_call_expression () {
+    fn test_function_call_expression() {
         assert_eq!(
-            function_call_expression!{foo("string", bar, 42)}.to_string(),
+            function_call_expression! {foo("string", bar, 42)}.to_string(),
             r#"foo("string", bar, 42)"#
         )
     }
 
     #[test]
-    fn test_function_call_statement () {
+    fn test_function_call_statement() {
         assert_eq!(
-            function_call_statement!{foo("string", bar, 42)}.to_string(),
+            function_call_statement! {foo("string", bar, 42)}.to_string(),
             r#"foo("string", bar, 42)"#
         )
     }
 
     #[test]
-    fn test_expression_function_call () {
+    fn test_expression_function_call() {
         let node = literal_expression!("foobar");
 
         assert_eq!(
-            expression!{foo("string", bar, 42, [node])}.to_string(),
+            expression! {foo("string", bar, 42, [node])}.to_string(),
             r#"foo("string", bar, 42, "foobar")"#
         )
     }
 
     #[test]
-    fn test_variable_declaration () {
+    fn test_variable_declaration() {
         assert_eq!(
-            variable_declaration!{let foo := 42}.to_string(),
+            variable_declaration! {let foo := 42}.to_string(),
             "let foo := 42"
         )
     }
 
     #[test]
-    fn test_variable_declaration_function () {
+    fn test_variable_declaration_function() {
         assert_eq!(
-            variable_declaration!{let foo := foo("bar", 42)}.to_string(),
+            variable_declaration! {let foo := foo("bar", 42)}.to_string(),
             r#"let foo := foo("bar", 42)"#
         )
     }
 
     #[test]
-    fn test_variable_declaration_function_nested_node () {
+    fn test_variable_declaration_function_nested_node() {
         let food = function_call_expression!(food("taco", apple));
 
         assert_eq!(
-            variable_declaration!{let foo := foo("bar", [food])}.to_string(),
+            variable_declaration! {let foo := foo("bar", [food])}.to_string(),
             r#"let foo := foo("bar", food("taco", apple))"#
         )
     }
 
     #[test]
-    fn test_variable_declaration_identifier_node () {
+    fn test_variable_declaration_identifier_node() {
         let foo = identifier!(foo);
 
         assert_eq!(
-            variable_declaration!{let [foo] := bar("baz")}.to_string(),
+            variable_declaration! {let [foo] := bar("baz")}.to_string(),
             r#"let foo := bar("baz")"#
         )
     }
 
     #[test]
-    fn test_variable_declaration_function_nested_raw () {
+    fn test_variable_declaration_function_nested_raw() {
         assert_eq!(
-            variable_declaration!{let foo := foo("bar", (food("taco", apple)))}.to_string(),
+            variable_declaration! {let foo := foo("bar", (food("taco", apple)))}.to_string(),
             r#"let foo := foo("bar", food("taco", apple))"#
         )
     }
 
     #[test]
-    fn test_assignment () {
-        assert_eq!(
-            assignment!{foo := 42}.to_string(),
-            "foo := 42"
-        )
+    fn test_assignment() {
+        assert_eq!(assignment! {foo := 42}.to_string(), "foo := 42")
     }
 
     #[test]
     fn test_statement_function() {
-        let _42 = expression!{42};
-        let biz = function_call_expression!{biz(bit, coin, [_42])};
+        let _42 = expression! {42};
+        let biz = function_call_expression! {biz(bit, coin, [_42])};
         assert_eq!(
-            statement!{
+            statement! {
                 bar(
                     "ding",
                      dong,
                      [biz],
                      (farm(cow, "sheep"))
                 )
-            }.to_string(),
+            }
+            .to_string(),
             r#"bar("ding", dong, biz(bit, coin, 42), farm(cow, "sheep"))"#
         )
     }
@@ -309,17 +289,14 @@ mod tests {
     #[test]
     fn test_statement_variable_declaration() {
         assert_eq!(
-            statement!{let foo := bar("ding", dong)}.to_string(),
+            statement! {let foo := bar("ding", dong)}.to_string(),
             r#"let foo := bar("ding", dong)"#
         )
     }
 
     #[test]
     fn test_statement_assignment() {
-        assert_eq!(
-            statement!{foo := 42}.to_string(),
-            "foo := 42"
-        )
+        assert_eq!(statement! {foo := 42}.to_string(), "foo := 42")
     }
 
     #[test]
@@ -328,14 +305,15 @@ mod tests {
             block! {
                 (let foo := 42)
                 (bar(foo))
-            }.to_string(),
+            }
+            .to_string(),
             "{ let foo := 42 bar(foo) }"
         )
     }
 
     #[test]
     fn function_definition() {
-        let bit = identifier!{bit};
+        let bit = identifier! {bit};
 
         assert_eq!(
             function_definition! {
@@ -343,7 +321,8 @@ mod tests {
                     (let baz := add(bit, coin))
                     (bar := hello_world(baz, "hi"))
                 }
-            }.to_string(),
+            }
+            .to_string(),
             r#"function foo(bit, coin) -> bar { let baz := add(bit, coin) bar := hello_world(baz, "hi") }"#
         )
     }
