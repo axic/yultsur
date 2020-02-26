@@ -3,7 +3,7 @@ use crate::yul;
 /// Creates a Yul literal.
 #[macro_export]
 macro_rules! literal {
-    {[$i:ident]} => {$i};
+    {[$($tts:tt)*]} => {$($tts)*};
     {$l:literal} => {yul::Literal { literal: stringify!($l).to_string(), yultype: None }};
 }
 
@@ -16,7 +16,7 @@ macro_rules! literal_expression {
 /// Creates a Yul identifier.
 #[macro_export]
 macro_rules! identifier {
-    {[$i:ident]} => {$i};
+    {[$($tts:tt)*]} => {$($tts)*};
     {$l:ident} => {yul::Identifier { identifier: stringify!($l).to_string(), yultype: None }};
 }
 
@@ -29,7 +29,7 @@ macro_rules! identifier_expression {
 /// Creates a Yul function call.
 #[macro_export]
 macro_rules! function_call {
-    {[$i:ident]} => {$i};
+    {[$($tts:tt)*]} => {$($tts)*};
     {$name:ident($($arg:tt),*)} => {
         yul::FunctionCall {
             identifier: identifier!{$name},
@@ -62,7 +62,7 @@ macro_rules! function_call_statement {
 #[macro_export]
 macro_rules! expression {
     {($($tts:tt)+)} => {expression!($($tts)*)};
-    {[$i:ident]} => {$i};
+    {[$($tts:tt)*]} => {$($tts)*};
     {$l:literal} => {literal_expression!{$l}};
     {$i:ident} => {identifier_expression!{$i}};
     {$name:ident($($arg:tt)*)} => {function_call_expression! {$name($($arg)+)}};
@@ -94,6 +94,7 @@ macro_rules! assignment {
 #[macro_export]
 macro_rules! statement {
     {($($tts:tt)+)} => {statement!($($tts)*)};
+    {[$($tts:tt)*]} => {$($tts)*};
     {$name:ident($($arg:tt)*)} => {function_call_statement!{$name($($arg)+)}};
     {let $name:tt := $($expr:tt)+} => {variable_declaration!{let $name := $($expr)+}};
     {$name:tt := $($expr:tt)+} => {assignment!{$name := $($expr)+}};
@@ -102,6 +103,7 @@ macro_rules! statement {
 /// Creates a Yul block.
 #[macro_export]
 macro_rules! block {
+    {[$($tts:tt)*]} => {$($tts)*};
     {$($statement:tt)*} => {
         yul::Block {
             statements: {
@@ -140,22 +142,52 @@ macro_rules! function_definition {
     };
 }
 
+/// Creates a Yul switch statement.
+#[macro_export]
+macro_rules! switch {
+    {@case (case $literal:tt { $($statement:tt)* })} => {
+        yul::Case {
+            literal: Some(literal! {$literal}),
+            block: block! {$($statement)*}
+        }
+    };
+    {@case (default { $($statement:tt)* })} => {
+        yul::Case {
+            literal: None,
+            block: block! {$($statement)*}
+        }
+    };
+
+    {switch $expression:tt $($case:tt)*} => {
+        yul::Statement::Switch(yul::Switch {
+            expression: expression! {$expression},
+            cases: {
+                let mut cases = vec![];
+                $(
+                    cases.push(switch! {@case $case} );
+                )*
+                cases
+            }
+        })
+    };
+}
+
 #[cfg(test)]
 mod tests {
     use crate::yul;
 
     #[test]
-    fn test_literal_string() {
+    fn literal_string() {
         assert_eq!(literal! {"foo"}.to_string(), r#""foo""#)
     }
 
     #[test]
-    fn test_literal_num() {
+    fn literal_num() {
         assert_eq!(literal! {42}.to_string(), "42")
     }
 
     #[test]
-    fn test_literal_node() {
+    fn literal_node() {
         let foo = yul::Literal {
             literal: r#""bar""#.to_string(),
             yultype: None,
@@ -164,29 +196,29 @@ mod tests {
     }
 
     #[test]
-    fn test_literal_expression_string() {
+    fn literal_expression_string() {
         assert_eq!(literal_expression! {"foo"}.to_string(), r#""foo""#)
     }
 
     #[test]
-    fn test_expression_literal() {
+    fn expression_literal() {
         assert_eq!(expression! {"foo"}.to_string(), r#""foo""#)
     }
 
     #[test]
-    fn test_expression_node() {
+    fn expression_node() {
         let node = literal_expression!("foobar");
 
         assert_eq!(expression! {[node]}.to_string(), r#""foobar""#)
     }
 
     #[test]
-    fn test_expression_identifier() {
+    fn expression_identifier() {
         assert_eq!(expression! {foo}.to_string(), "foo")
     }
 
     #[test]
-    fn test_function_call() {
+    fn function_call() {
         assert_eq!(
             function_call! {foo("string", bar, 42)}.to_string(),
             r#"foo("string", bar, 42)"#
@@ -194,7 +226,7 @@ mod tests {
     }
 
     #[test]
-    fn test_function_call_node() {
+    fn function_call_node() {
         let node = literal_expression!("foobar");
 
         assert_eq!(
@@ -204,7 +236,7 @@ mod tests {
     }
 
     #[test]
-    fn test_function_call_expression() {
+    fn function_call_expression() {
         assert_eq!(
             function_call_expression! {foo("string", bar, 42)}.to_string(),
             r#"foo("string", bar, 42)"#
@@ -212,7 +244,7 @@ mod tests {
     }
 
     #[test]
-    fn test_function_call_statement() {
+    fn function_call_statement() {
         assert_eq!(
             function_call_statement! {foo("string", bar, 42)}.to_string(),
             r#"foo("string", bar, 42)"#
@@ -220,7 +252,7 @@ mod tests {
     }
 
     #[test]
-    fn test_expression_function_call() {
+    fn expression_function_call() {
         let node = literal_expression!("foobar");
 
         assert_eq!(
@@ -230,7 +262,7 @@ mod tests {
     }
 
     #[test]
-    fn test_variable_declaration() {
+    fn variable_declaration() {
         assert_eq!(
             variable_declaration! {let foo := 42}.to_string(),
             "let foo := 42"
@@ -238,7 +270,7 @@ mod tests {
     }
 
     #[test]
-    fn test_variable_declaration_function() {
+    fn variable_declaration_function() {
         assert_eq!(
             variable_declaration! {let foo := foo("bar", 42)}.to_string(),
             r#"let foo := foo("bar", 42)"#
@@ -246,7 +278,7 @@ mod tests {
     }
 
     #[test]
-    fn test_variable_declaration_function_nested_node() {
+    fn variable_declaration_function_nested_node() {
         let food = function_call_expression!(food("taco", apple));
 
         assert_eq!(
@@ -256,7 +288,7 @@ mod tests {
     }
 
     #[test]
-    fn test_variable_declaration_identifier_node() {
+    fn variable_declaration_identifier_node() {
         let foo = identifier!(foo);
 
         assert_eq!(
@@ -266,7 +298,7 @@ mod tests {
     }
 
     #[test]
-    fn test_variable_declaration_function_nested_raw() {
+    fn variable_declaration_function_nested_raw() {
         assert_eq!(
             variable_declaration! {let foo := foo("bar", (food("taco", apple)))}.to_string(),
             r#"let foo := foo("bar", food("taco", apple))"#
@@ -274,12 +306,12 @@ mod tests {
     }
 
     #[test]
-    fn test_assignment() {
+    fn assignment() {
         assert_eq!(assignment! {foo := 42}.to_string(), "foo := 42")
     }
 
     #[test]
-    fn test_statement_function() {
+    fn statement_function() {
         let _42 = expression! {42};
         let biz = function_call_expression! {biz(bit, coin, [_42])};
         assert_eq!(
@@ -297,7 +329,7 @@ mod tests {
     }
 
     #[test]
-    fn test_statement_variable_declaration() {
+    fn statement_variable_declaration() {
         assert_eq!(
             statement! {let foo := bar("ding", dong)}.to_string(),
             r#"let foo := bar("ding", dong)"#
@@ -305,12 +337,12 @@ mod tests {
     }
 
     #[test]
-    fn test_statement_assignment() {
+    fn statement_assignment() {
         assert_eq!(statement! {foo := 42}.to_string(), "foo := 42")
     }
 
     #[test]
-    fn test_block() {
+    fn block() {
         assert_eq!(
             block! {
                 (let foo := 42)
@@ -337,20 +369,63 @@ mod tests {
         )
     }
 
-
     #[test]
     fn function_definition_no_return() {
         let bit = identifier! {bit};
 
         assert_eq!(
             function_definition! {
-                function foo([bit], coin) {
+                function foo([bit], [identifier! {coin}]) {
                     (let baz := add(bit, coin))
                     (bar := hello_world(baz, "hi"))
                 }
-            }
-                .to_string(),
+            }.to_string(),
             r#"function foo(bit, coin) { let baz := add(bit, coin) bar := hello_world(baz, "hi") }"#
         )
     }
+    
+    #[test]
+    fn switch() {
+        let foo = expression! {foo(1, "s")};
+        let bing = expression! {bing("bong")};
+        let _42 = literal! {42};
+
+        assert_eq! {
+            switch! {
+                switch [foo]
+                (case 1 {
+                    (bar(42))
+                })
+                (case [_42] {
+                    (bar(420))
+                    (baz("block", chain))
+                })
+                (default {
+                    (let bing := [bing])
+                    (bar(bing))
+                })
+            }.to_string(),
+            r#"switch foo(1, "s") case 1 { bar(42) } case 42 { bar(420) baz("block", chain) } default { let bing := bing("bong") bar(bing) } "#
+        }
+        #[test]
+
+        fn switch_no_default() {
+            let foo = expression! {foo(1, "s")};
+            let bing = expression! {bing("bong")};
+            let _42 = literal! {42};
+
+            assert_eq! {
+                switch! {
+                switch [foo]
+                (case 1 {
+                    (bar(42))
+                })
+                (case [_42] {
+                    (bar(420))
+                    (baz("block", chain))
+                })
+            }.to_string(),
+                r#"switch foo(1, "s") case 1 { bar(42) } case 42 { bar(420) baz("block", chain) } "#
+            }
+        }   }
 }
