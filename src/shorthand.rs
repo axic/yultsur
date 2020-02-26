@@ -61,11 +61,11 @@ macro_rules! function_call_statement {
 /// Creates a Yul expression.
 #[macro_export]
 macro_rules! expression {
-    {($($tts:tt)+)} => {expression!($($tts)*)};
+    {($($tts:tt)*)} => {expression!($($tts)*)};
     {[$($tts:tt)*]} => {$($tts)*};
     {$l:literal} => {literal_expression!{$l}};
     {$i:ident} => {identifier_expression!{$i}};
-    {$name:ident($($arg:tt)*)} => {function_call_expression! {$name($($arg)+)}};
+    {$name:ident($($arg:tt)*)} => {function_call_expression! {$name($($arg)*)}};
 }
 
 /// Creates a Yul variable declaration statement.
@@ -93,23 +93,26 @@ macro_rules! assignment {
 /// Creates a Yul statement.
 #[macro_export]
 macro_rules! statement {
-    {($($tts:tt)+)} => {statement!($($tts)*)};
+    {($($tts:tt)*)} => {statement! {$($tts)*}};
     {[$($tts:tt)*]} => {$($tts)*};
-    {$name:ident($($arg:tt)*)} => {function_call_statement!{$name($($arg)+)}};
-    {let $name:tt := $($expr:tt)+} => {variable_declaration!{let $name := $($expr)+}};
-    {$name:tt := $($expr:tt)+} => {assignment!{$name := $($expr)+}};
+    {$name:ident($($arg:tt)*)} => {function_call_statement!{$name($($arg)*)}};
+    {let $name:tt := $($expr:tt)*} => {variable_declaration!{let $name := $($expr)*}};
+    {$name:tt := $($expr:tt)*} => {assignment!{$name := $($expr)*}};
 }
 
 /// Creates a Yul block.
 #[macro_export]
 macro_rules! block {
+    {@statement [$statement_vec:tt...]} => { $statement_vec.clone() };
+    {@statement $statement:tt} => {vec![statement! {$statement}]};
+
     {[$($tts:tt)*]} => {$($tts)*};
     {$($statement:tt)*} => {
         yul::Block {
             statements: {
                 let mut statements = vec![];
                 $(
-                    statements.push(statement!{$statement});
+                    statements.append(&mut block! {@statement $statement});
                 )*
                 statements
             }
@@ -350,6 +353,24 @@ mod tests {
             }
             .to_string(),
             "{ let foo := 42 bar(foo) }"
+        )
+    }
+
+    #[test]
+    fn block_multi_insert() {
+        let statements = vec![
+            statement! { let bar := 2 },
+            statement! { blockchain(_3d) },
+        ];
+
+        assert_eq!(
+            block! {
+                (let foo := 42)
+                [statements...]
+                (bar(foo))
+            }
+                .to_string(),
+            "{ let foo := 42 let bar := 2 blockchain(_3d) bar(foo) }"
         )
     }
 
