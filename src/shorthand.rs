@@ -3,43 +3,47 @@ use crate::yul;
 /// Creates a Yul literal.
 #[macro_export]
 macro_rules! literal {
-    {[$($tts:tt)*]} => {$($tts)*};
+    {[$e:expr]} => {$e};
     {$l:literal} => {yul::Literal { literal: stringify!($l).to_string(), yultype: None }};
 }
 
 /// Creates a Yul literal expression.
 #[macro_export]
 macro_rules! literal_expression {
-    {$($tts:tt)*} => {yul::Expression::Literal(literal!($($tts)*))};
+    {$($literal:tt)*} => {yul::Expression::Literal(literal!($($literal)*))};
 }
 
 /// Creates a Yul identifier.
 #[macro_export]
 macro_rules! identifier {
-    {[$($tts:tt)*]} => {$($tts)*};
-    {$l:ident} => {yul::Identifier { identifier: stringify!($l).to_string(), yultype: None }};
+    {[$e:expr]} => {$e};
+    {$i:ident} => {yul::Identifier { identifier: stringify!($i).to_string(), yultype: None }};
+}
+
+/// Creates a vec of Yul identifiers.
+#[macro_export]
+macro_rules! identifiers {
+    {$($identifier:tt)*} => {{
+        let mut identifiers = vec![];
+        $(identifiers.push(identifier! {$identifier});)*
+        identifiers
+    }};
 }
 
 /// Creates a Yul identifier expression.
 #[macro_export]
 macro_rules! identifier_expression {
-    {$($tts:tt)*} => {yul::Expression::Identifier(identifier!($($tts)*))};
+    {$($identifier:tt)*} => {yul::Expression::Identifier(identifier! {$($identifier)*})};
 }
 
 /// Creates a Yul function call.
 #[macro_export]
 macro_rules! function_call {
-    {[$($tts:tt)*]} => {$($tts)*};
-    {$name:ident($($arg:tt),*)} => {
+    {[$e:expr]} => {$e};
+    {$name:tt($($args:tt),*)} => {
         yul::FunctionCall {
-            identifier: identifier!{$name},
-            arguments: {
-                let mut args = vec![];
-                $(
-                    args.push(expression!{$arg});
-                )*
-                args
-            }
+            identifier: identifier! {$name},
+            arguments: expressions! {$($args)*}
         }
     };
 }
@@ -47,34 +51,46 @@ macro_rules! function_call {
 /// Creates a function call expression.
 #[macro_export]
 macro_rules! function_call_expression {
-    {$($tts:tt)*} => {yul::Expression::FunctionCall(function_call!($($tts)*))};
+    {$($function_call:tt)*} => {
+        yul::Expression::FunctionCall(function_call! {$($function_call)*})
+    };
 }
 
 /// Creates a function call statement.
 #[macro_export]
 macro_rules! function_call_statement {
-    {$($tts:tt)*} => {yul::Statement::Expression(
-        yul::Expression::FunctionCall(function_call!($($tts)*))
-    )};
+    {$($function_call:tt)*} => {
+        yul::Statement::Expression(function_call_expression! {$($function_call)*})
+    };
 }
 
 /// Creates a Yul expression.
 #[macro_export]
 macro_rules! expression {
-    {($($tts:tt)*)} => {expression!($($tts)*)};
-    {[$($tts:tt)*]} => {$($tts)*};
-    {$l:literal} => {literal_expression!{$l}};
-    {$i:ident} => {identifier_expression!{$i}};
-    {$name:ident($($arg:tt)*)} => {function_call_expression! {$name($($arg)*)}};
+    {[$e:expr]} => {$e};
+    {($($expression:tt)*)} => {expression! {$($expression)*}};
+    {$name:tt($($args:tt)*)} => {function_call_expression! {$name($($args)*)}};
+    {$l:literal} => {literal_expression! {$l}};
+    {$i:ident} => {identifier_expression! {$i}};
+}
+
+/// Creates a vec of Yul expressions.
+#[macro_export]
+macro_rules! expressions {
+     {$($expressions:tt)*} => {{
+        let mut expressions = vec![];
+        $(expressions.push(expression! {$expressions});)*
+        expressions
+    }};
 }
 
 /// Creates a Yul variable declaration statement.
 #[macro_export]
 macro_rules! variable_declaration {
-    {let $name:tt := $($tts:tt)+} => {
+    {let $name:tt := $($expression:tt)*} => {
         yul::Statement::VariableDeclaration(yul::VariableDeclaration {
-            identifiers: vec![identifier!{$name}],
-            expression: Some(expression!{$($tts)*})
+            identifiers: vec![identifier! {$name}],
+            expression: Some(expression! {$($expression)*})
         })
     };
 }
@@ -82,10 +98,10 @@ macro_rules! variable_declaration {
 /// Creates a Yul assignment statement.
 #[macro_export]
 macro_rules! assignment {
-    {$name:tt := $($expr:tt)+} => {
+    {$name:tt := $($expression:tt)+} => {
         yul::Statement::Assignment(yul::Assignment {
-            identifiers: vec![identifier!{$name}],
-            expression: expression!{$($expr)*}
+            identifiers: vec![identifier! {$name}],
+            expression: expression! {$($expression)*}
         })
     };
 }
@@ -93,54 +109,50 @@ macro_rules! assignment {
 /// Creates a Yul statement.
 #[macro_export]
 macro_rules! statement {
-    {($($tts:tt)*)} => {statement! {$($tts)*}};
-    {[$($tts:tt)*]} => {$($tts)*};
-    {$name:ident($($arg:tt)*)} => {function_call_statement!{$name($($arg)*)}};
-    {let $name:tt := $($expr:tt)*} => {variable_declaration!{let $name := $($expr)*}};
-    {$name:tt := $($expr:tt)*} => {assignment!{$name := $($expr)*}};
+    {[$e:expr]} => {$e};
+    {($($statement:tt)*)} => {statement! {$($statement)*}};
+    {$name:tt($($args:tt)*)} => {function_call_statement! {$name($($args)*)}};
+    {let $name:tt := $($expression:tt)*} => {variable_declaration! {let $name := $($expression)*}};
+    {$name:tt := $($expression:tt)*} => {assignment! {$name := $($expression)*}};
+    {function $name:tt($($params:tt),*) $(-> $returns:ident)? {$($statements:tt)*}} => {
+        function $name($($params),*) $(-> $returns)? {$($statements)*}
+    }
+}
+
+/// Creates a vec of Yul statements.
+#[macro_export]
+macro_rules! statements {
+    {@as_vec [$statements:tt...]} => { $statements.clone() };
+    {@as_vec $($statement:tt)*} => {vec![statement! {$($statement)*}]};
+
+    {[$e:expr]} => {vec![$e]};
+    {$($statement:tt)*} => {{
+       let mut statements = vec![];
+       $(statements.append(&mut statements! {@as_vec $statement});)*
+       statements
+    }};
 }
 
 /// Creates a Yul block.
 #[macro_export]
 macro_rules! block {
-    {@statement [$statement_vec:tt...]} => { $statement_vec.clone() };
-    {@statement $statement:tt} => {vec![statement! {$statement}]};
-
-    {[$($tts:tt)*]} => {$($tts)*};
-    {$($statement:tt)*} => {
-        yul::Block {
-            statements: {
-                let mut statements = vec![];
-                $(
-                    statements.append(&mut block! {@statement $statement});
-                )*
-                statements
-            }
-        }
-    };
+    {[$e:expr]} => {$e};
+    {$($statements:tt)*} => { yul::Block { statements: statements! {$($statements)*} }};
 }
 
 /// Creates a Yul function definition.
 #[macro_export]
 macro_rules! function_definition {
-    {function $name:ident($($param:tt),*) $(-> $returns:ident)? {$($statement:tt)*}} => {
+    {function $name:tt($($params:tt),*) $(-> $returns:ident)? {$($statements:tt)*}} => {
         yul::Statement::FunctionDefinition(yul::FunctionDefinition {
-            name: identifier!{$name},
-            parameters: {
-                let mut params = vec![];
-                $(
-                    params.push(identifier!{$param});
-                )*
-                params
-            },
+            name: identifier! {$name},
+            parameters: identifiers! {$($params)*},
             returns: {
                 let mut returns = vec![];
-                $(
-                    returns.push(identifier!{$returns});
-                )*
+                $(returns.push(identifier!{$returns});)*
                 returns
             },
-            block: block!{$($statement)*},
+            block: block!{$($statements)*},
         })
     };
 }
@@ -148,27 +160,25 @@ macro_rules! function_definition {
 /// Creates a Yul switch statement.
 #[macro_export]
 macro_rules! switch {
-    {@case (case $literal:tt { $($statement:tt)* })} => {
+    {@case (case $literal:tt { $($statements:tt)* })} => {
         yul::Case {
             literal: Some(literal! {$literal}),
-            block: block! {$($statement)*}
+            block: block! {$($statements)*}
         }
     };
-    {@case (default { $($statement:tt)* })} => {
+    {@case (default { $($statements:tt)* })} => {
         yul::Case {
             literal: None,
-            block: block! {$($statement)*}
+            block: block! {$($statements)*}
         }
     };
 
-    {switch $expression:tt $($case:tt)*} => {
+    {switch $expression:tt $($cases:tt)*} => {
         yul::Statement::Switch(yul::Switch {
             expression: expression! {$expression},
             cases: {
                 let mut cases = vec![];
-                $(
-                    cases.push(switch! {@case $case} );
-                )*
+                $(cases.push(switch! {@case $cases});)*
                 cases
             }
         })
@@ -326,7 +336,7 @@ mod tests {
                      (farm(cow, "sheep"))
                 )
             }
-            .to_string(),
+                .to_string(),
             r#"bar("ding", dong, biz(bit, coin, 42), farm(cow, "sheep"))"#
         )
     }
@@ -351,7 +361,7 @@ mod tests {
                 (let foo := 42)
                 (bar(foo))
             }
-            .to_string(),
+                .to_string(),
             "{ let foo := 42 bar(foo) }"
         )
     }
@@ -385,7 +395,7 @@ mod tests {
                     (bar := hello_world(baz, "hi"))
                 }
             }
-            .to_string(),
+                .to_string(),
             r#"function foo(bit, coin) -> bar { let baz := add(bit, coin) bar := hello_world(baz, "hi") }"#
         )
     }
@@ -404,7 +414,7 @@ mod tests {
             r#"function foo(bit, coin) { let baz := add(bit, coin) bar := hello_world(baz, "hi") }"#
         )
     }
-    
+
     #[test]
     fn switch() {
         let foo = expression! {foo(1, "s")};
@@ -449,4 +459,31 @@ mod tests {
                 r#"switch foo(1, "s") case 1 { bar(42) } case 42 { bar(420) baz("block", chain) } "#
             }
         }   }
+
+    #[test]
+    fn statements() {
+        let good_statements = statements! {
+            (let a := my_function("hello", (world("42"))))
+            (b := add(a, 2))
+        };
+
+        let food = identifier! {food};
+        let better_statements = statements! {
+            (let value := [food](1, 2))
+            (let another_value := 42)
+        };
+
+        let best_statement = statement! { foo := "42 bar 42" };
+
+        assert_eq!(
+            statements! {
+                (let kung := foo)
+                [good_statements...]
+                (ip := man())
+                [better_statements...]
+                [best_statement]
+            }.iter().map(|s| s.to_string()).collect::<Vec<String>>().join(" "),
+            r#"let kung := foo let a := my_function("hello", world("42")) b := add(a, 2) ip := man() let value := food(1, 2) let another_value := 42 foo := "42 bar 42""#
+        )
+    }
 }
