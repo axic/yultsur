@@ -138,7 +138,6 @@ macro_rules! statements {
 /// Creates a Yul block.
 #[macro_export]
 macro_rules! block {
-    {[$e:expr]} => {$e};
     {$($statements:tt)*} => { yul::Block { statements: statements! {$($statements)*} }};
 }
 
