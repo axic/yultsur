@@ -119,7 +119,8 @@ macro_rules! statement {
     {$name:tt := $($expression:tt)*} => {assignment! {$name := $($expression)*}};
     {function $name:tt($($params:tt),*) $(-> $returns:tt)? {$($statements:tt)*}} => {
         function $name($($params),*) $(-> $returns)? {$($statements)*}
-    }
+    };
+    {switch $expression:tt $($cases:tt)*} => {switch! {switch $expression $($cases)*}};
 }
 
 /// Creates a vec of Yul statements.
@@ -513,6 +514,27 @@ mod tests {
                 [bar_func]
             }.to_string(),
             r#"{ let a := b function foo(test, one, two) { log("hello_world") } function foo(two, three, four) -> return_val { let a := test(two, three, four) return_val := a } }"#
+        )
+    }
+
+    #[test]
+    fn object_w_switch() {
+
+        assert_eq!(
+            block! {
+                (let a := 40)
+                (let b := 2)
+                (switch (add(a,b))
+                    (case 42 {
+                        (let c := 2)
+                    })
+                    (case "3d" {
+                        (foo(0))
+                        (bar("test"))
+                    })
+                )
+            }.to_string(),
+            r#"{ let a := 40 let b := 2 switch add(a, b) case 42 { let c := 2 } case "3d" { foo(0) bar("test") }  }"#
         )
     }
 }
