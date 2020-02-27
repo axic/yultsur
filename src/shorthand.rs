@@ -23,9 +23,12 @@ macro_rules! identifier {
 /// Creates a vec of Yul identifiers.
 #[macro_export]
 macro_rules! identifiers {
-    {$($identifier:tt)*} => {{
+    {@as_vec [$identifiers:tt...]} => { $identifiers.clone() };
+    {@as_vec $($identifier:tt)*} => {vec![identifier! {$($identifier)*}]};
+
+    {$($identifiers:tt)*} => {{
         let mut identifiers = vec![];
-        $(identifiers.push(identifier! {$identifier});)*
+        $(identifiers.append(&mut identifiers! {@as_vec $identifiers});)*
         identifiers
     }};
 }
@@ -114,7 +117,7 @@ macro_rules! statement {
     {$name:tt($($args:tt)*)} => {function_call_statement! {$name($($args)*)}};
     {let $name:tt := $($expression:tt)*} => {variable_declaration! {let $name := $($expression)*}};
     {$name:tt := $($expression:tt)*} => {assignment! {$name := $($expression)*}};
-    {function $name:tt($($params:tt),*) $(-> $returns:ident)? {$($statements:tt)*}} => {
+    {function $name:tt($($params:tt),*) $(-> $returns:tt)? {$($statements:tt)*}} => {
         function $name($($params),*) $(-> $returns)? {$($statements)*}
     }
 }
@@ -125,7 +128,6 @@ macro_rules! statements {
     {@as_vec [$statements:tt...]} => { $statements.clone() };
     {@as_vec $($statement:tt)*} => {vec![statement! {$($statement)*}]};
 
-    {[$e:expr]} => {vec![$e]};
     {$($statement:tt)*} => {{
        let mut statements = vec![];
        $(statements.append(&mut statements! {@as_vec $statement});)*
@@ -143,7 +145,7 @@ macro_rules! block {
 /// Creates a Yul function definition.
 #[macro_export]
 macro_rules! function_definition {
-    {function $name:tt($($params:tt),*) $(-> $returns:ident)? {$($statements:tt)*}} => {
+    {function $name:tt($($params:tt),*) $(-> $returns:tt)? {$($statements:tt)*}} => {
         yul::Statement::FunctionDefinition(yul::FunctionDefinition {
             name: identifier! {$name},
             parameters: identifiers! {$($params)*},
@@ -484,6 +486,34 @@ mod tests {
                 [best_statement]
             }.iter().map(|s| s.to_string()).collect::<Vec<String>>().join(" "),
             r#"let kung := foo let a := my_function("hello", world("42")) b := add(a, 2) ip := man() let value := food(1, 2) let another_value := 42 foo := "42 bar 42""#
+        )
+    }
+
+    #[test]
+    fn object_w_function_definitions() {
+        let one = identifier! {one};
+        let foo_idents = identifiers! {test [one] two};
+        let foo_func = function_definition! {
+            function foo([foo_idents...]) {
+                (log("hello_world"))
+            }
+        };
+
+        let bar_idents = identifiers! {three four};
+        let bar_func = function_definition! {
+            function foo(two, [bar_idents...]) -> return_val {
+                (let a := test(two, three, four))
+                (return_val := a)
+            }
+        };
+
+        assert_eq!(
+            block! {
+                (let a := b)
+                [foo_func]
+                [bar_func]
+            }.to_string(),
+            r#"{ let a := b function foo(test, one, two) { log("hello_world") } function foo(two, three, four) -> return_val { let a := test(two, three, four) return_val := a } }"#
         )
     }
 }
