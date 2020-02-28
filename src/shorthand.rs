@@ -159,30 +159,46 @@ macro_rules! function_definition {
     };
 }
 
-/// Creates a Yul switch statement.
+/// Create a Yul case.
 #[macro_export]
-macro_rules! switch {
-    {@case (case $literal:tt { $($statements:tt)* })} => {
+macro_rules! case {
+    {[$e:expr]} => {$e};
+    {($($case:tt)*)} => {case! {$($case)*}};
+    {case $literal:tt { $($statements:tt)* }} => {
         yul::Case {
             literal: Some(literal! {$literal}),
             block: block! {$($statements)*}
         }
     };
-    {@case (default { $($statements:tt)* })} => {
+    {default { $($statements:tt)* }} => {
         yul::Case {
             literal: None,
             block: block! {$($statements)*}
         }
     };
+}
 
+/// Creates a vec of Yul cases.
+#[macro_export]
+macro_rules! cases {
+    {@as_vec [$cases:tt...]} => { $cases.clone() };
+    {@as_vec $($case:tt)*} => {vec![case! {$($case)*}]};
+
+    {$($case:tt)*} => {{
+       let mut cases = vec![];
+       $(cases.append(&mut cases! {@as_vec $case});)*
+       cases
+    }};
+}
+
+
+/// Creates a Yul switch statement.
+#[macro_export]
+macro_rules! switch {
     {switch $expression:tt $($cases:tt)*} => {
         yul::Statement::Switch(yul::Switch {
             expression: expression! {$expression},
-            cases: {
-                let mut cases = vec![];
-                $(cases.push(switch! {@case $cases});)*
-                cases
-            }
+            cases: cases! {$($cases)*}
         })
     };
 }
@@ -519,7 +535,6 @@ mod tests {
 
     #[test]
     fn object_w_switch() {
-
         assert_eq!(
             block! {
                 (let a := 40)
@@ -535,6 +550,34 @@ mod tests {
                 )
             }.to_string(),
             r#"{ let a := 40 let b := 2 switch add(a, b) case 42 { let c := 2 } case "3d" { foo(0) bar("test") }  }"#
+        )
+    }
+
+    #[test]
+    fn cases_in_switch() {
+        let case_foo = case! {
+            case "foo" { (test(42)) }
+        };
+
+        let case_bar = case! {
+            case "bar" { (hello_world(42)) (a := b) }
+        };
+
+        let cases = vec![case_foo, case_bar];
+
+        let default = case! {
+            default {
+                (c := 4)
+            }
+        };
+
+        assert_eq!(
+            switch! {
+                switch (cat("f",s))
+                [cases...]
+                [default]
+            }.to_string(),
+            r#"switch cat("f", s) case "foo" { test(42) } case "bar" { hello_world(42) a := b } default { c := 4 } "#
         )
     }
 }
