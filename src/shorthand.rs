@@ -80,11 +80,14 @@ macro_rules! expression {
 /// Creates a vec of Yul expressions.
 #[macro_export]
 macro_rules! expressions {
+     {@as_vec [$expressions:tt...]} => { $expressions.clone() };
+     {@as_vec $($expression:tt)*} => {vec![expression! {$($expression)*}]};
+
      {$($expressions:tt)*} => {{
-        let mut expressions = vec![];
-        $(expressions.push(expression! {$expressions});)*
-        expressions
-    }};
+         let mut expressions = vec![];
+         $(expressions.append(&mut expressions! {@as_vec $expressions});)*
+         expressions
+     }};
 }
 
 /// Creates a Yul variable declaration statement.
@@ -250,9 +253,11 @@ mod tests {
 
     #[test]
     fn function_call() {
+        let expressions = expressions! { bar "foo" (call()) };
+
         assert_eq!(
-            function_call! {foo("string", bar, 42)}.to_string(),
-            r#"foo("string", bar, 42)"#
+            function_call! {foo("string", bar, 42, [expressions...])}.to_string(),
+            r#"foo("string", bar, 42, bar, "foo", call())"#
         )
     }
 
