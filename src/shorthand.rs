@@ -124,6 +124,7 @@ macro_rules! statement {
         function $name($($params),*) $(-> $returns)? {$($statements)*}
     };
     {switch $expression:tt $($cases:tt)*} => {switch! {switch $expression $($cases)*}};
+    {if $expression:tt { $($block:tt)* }} => {_if! {if $expression { $($block)* }}};
 }
 
 /// Creates a vec of Yul statements.
@@ -194,7 +195,6 @@ macro_rules! cases {
     }};
 }
 
-
 /// Creates a Yul switch statement.
 #[macro_export]
 macro_rules! switch {
@@ -204,6 +204,17 @@ macro_rules! switch {
             cases: cases! {$($cases)*}
         })
     };
+}
+
+/// Creates a Yul if statement
+#[macro_export]
+macro_rules! _if {
+    {if $expression:tt { $($block:tt)* }} => {
+        yul::Statement::If(yul::If {
+            expression: expression! {$expression},
+            block: block! {$($block)*}
+        })
+    }
 }
 
 #[cfg(test)]
@@ -256,7 +267,7 @@ mod tests {
         let expressions = expressions! { bar "foo" (call()) };
 
         assert_eq!(
-            function_call! {foo("string", bar, 42, [expressions...])}.to_string(),
+            function_call! { foo("string", bar, 42, [expressions...]) }.to_string(),
             r#"foo("string", bar, 42, bar, "foo", call())"#
         )
     }
@@ -505,8 +516,9 @@ mod tests {
                 (ip := man())
                 [better_statements...]
                 [best_statement]
+                (if 0 { (call(42)) })
             }.iter().map(|s| s.to_string()).collect::<Vec<String>>().join(" "),
-            r#"let kung := foo let a := my_function("hello", world("42")) b := add(a, 2) ip := man() let value := food(1, 2) let another_value := 42 foo := "42 bar 42""#
+            r#"let kung := foo let a := my_function("hello", world("42")) b := add(a, 2) ip := man() let value := food(1, 2) let another_value := 42 foo := "42 bar 42" if 0 { call(42) }"#
         )
     }
 
@@ -583,6 +595,14 @@ mod tests {
                 [default]
             }.to_string(),
             r#"switch cat("f", s) case "foo" { test(42) } case "bar" { hello_world(42) a := b } default { c := 4 } "#
+        )
+    }
+
+    #[test]
+    fn _if() {
+        assert_eq!(
+            _if! { if (eq(foo, 0)) { (let a := b) } }.to_string(),
+            "if eq(foo, 0) { let a := b }"
         )
     }
 }
