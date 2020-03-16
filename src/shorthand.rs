@@ -125,6 +125,9 @@ macro_rules! statement {
     };
     {switch $expression:tt $($cases:tt)*} => {switch! {switch $expression $($cases)*}};
     {if $expression:tt { $($block:tt)* }} => {_if! {if $expression { $($block)* }}};
+    {for { $($pre:tt)* } $condition:tt { $($post:tt)* } { $($body:tt)* } } => {
+        for_loop! { for { $($pre)* } $condition { $($post)* } { $($body)* } }
+    }
 }
 
 /// Creates a vec of Yul statements.
@@ -213,6 +216,19 @@ macro_rules! _if {
         yul::Statement::If(yul::If {
             expression: expression! {$expression},
             block: block! {$($block)*}
+        })
+    }
+}
+
+/// Creates a Yul for loop statement
+#[macro_export]
+macro_rules! for_loop {
+    {for { $($pre:tt)* } $condition:tt { $($post:tt)* } { $($body:tt)* } } => {
+        yul::Statement::ForLoop(yul::ForLoop {
+            pre: block! {$($pre)*},
+            condition: expression! {$condition},
+            post: block! {$($post)*},
+            body: block! {$($body)*}
         })
     }
 }
@@ -603,6 +619,32 @@ mod tests {
         assert_eq!(
             _if! { if (eq(foo, 0)) { (let a := b) } }.to_string(),
             "if eq(foo, 0) { let a := b }"
+        )
+    }
+
+    #[test]
+    fn for_loop() {
+        assert_eq!(
+            for_loop! {
+                for { (let i := 0) } (lt(i, exponent)) { (i := add(i, 1)) }
+                {
+                    (result := mul(result, base))
+                }
+            }.to_string(),
+            "for { let i := 0 } lt(i, exponent) { i := add(i, 1) } { result := mul(result, base) }"
+        )
+    }
+
+    #[test]
+    fn statement_for_loop() {
+        assert_eq!(
+            statement! {
+                for { (let i := 0) } (lt(i, exponent)) { (i := add(i, 1)) }
+                {
+                    (result := mul(result, base))
+                }
+            }.to_string(),
+            "for { let i := 0 } lt(i, exponent) { i := add(i, 1) } { result := mul(result, base) }"
         )
     }
 }
