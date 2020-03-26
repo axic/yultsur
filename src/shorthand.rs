@@ -4,6 +4,7 @@ use crate::yul;
 #[macro_export]
 macro_rules! literal {
     {[$e:expr]} => {$e};
+    {($e:expr)} => {yul::Literal { literal: $e.to_string(), yultype: None }};
     {$l:literal} => {yul::Literal { literal: stringify!($l).to_string(), yultype: None }};
 }
 
@@ -17,6 +18,7 @@ macro_rules! literal_expression {
 #[macro_export]
 macro_rules! identifier {
     {[$e:expr]} => {$e};
+    {($e:expr)} => {yul::Identifier { identifier: $e.to_string(), yultype: None }};
     {$i:ident} => {yul::Identifier { identifier: stringify!($i).to_string(), yultype: None }};
 }
 
@@ -645,6 +647,35 @@ mod tests {
                 }
             }.to_string(),
             "for { let i := 0 } lt(i, exponent) { i := add(i, 1) } { result := mul(result, base) }"
+        )
+    }
+
+    #[test]
+    fn identifier_from_expression() {
+        let identifier = "test";
+
+        assert_eq!(
+            identifier! {(identifier)}.to_string(),
+            "test"
+        );
+
+        assert_eq!(
+            identifier_expression! {(identifier)}.to_string(),
+            "test"
+        )
+    }
+
+    #[test]
+    fn literal_from_expression() {
+        assert_eq!(
+            literal! {(1 + 1)}.to_string(),
+            "2"
+        );
+
+        let foo = r#""bar""#;
+        assert_eq!(
+            literal_expression! {(foo)}.to_string(),
+            r#""bar""#
         )
     }
 }
