@@ -1,3 +1,18 @@
+//! This module contains a set of macros for shorthand Yul AST generation.
+//!
+//! ## Example Usage
+//!
+//! ```rust
+//! let some_ident = identifier! { bar };
+//!
+//! function_definition! {
+//!     function foo([some_ident], baz) -> foo {
+//!         (let val := add(bar, baz))
+//!         (foo := some_func(val, "hi"))
+//!     }
+//!}
+//! ```
+
 use crate::yul;
 
 /// Creates a Yul literal.
