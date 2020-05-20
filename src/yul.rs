@@ -118,6 +118,7 @@ pub enum Statement {
     ForLoop(ForLoop),
     Break,
     Continue,
+    Leave,
 }
 
 impl fmt::Display for Type {
@@ -346,6 +347,7 @@ impl fmt::Display for Statement {
             Statement::ForLoop(ref forloop) => write!(f, "{}", forloop),
             Statement::Break => write!(f, "break"),
             Statement::Continue => write!(f, "continue"),
+            Statement::Leave => write!(f, "leave"),
         }
     }
 }

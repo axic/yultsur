@@ -1,17 +1,4 @@
 //! This module contains a set of macros for shorthand Yul AST generation.
-//!
-//! ## Example Usage
-//!
-//! ```rust
-//! let some_ident = identifier! { bar };
-//!
-//! function_definition! {
-//!     function foo([some_ident], baz) -> foo {
-//!         (let val := add(bar, baz))
-//!         (foo := some_func(val, "hi"))
-//!     }
-//!}
-//! ```
 
 use crate::yul;
 
@@ -144,7 +131,8 @@ macro_rules! statement {
     {if $expression:tt { $($block:tt)* }} => {_if! {if $expression { $($block)* }}};
     {for { $($pre:tt)* } $condition:tt { $($post:tt)* } { $($body:tt)* } } => {
         for_loop! { for { $($pre)* } $condition { $($post)* } { $($body)* } }
-    }
+    };
+    {leave} => {yul::Statement::Leave};
 }
 
 /// Creates a vec of Yul statements.
@@ -691,6 +679,14 @@ mod tests {
         assert_eq!(
             literal_expression! {(foo)}.to_string(),
             r#""bar""#
+        )
+    }
+
+    #[test]
+    fn leave() {
+        assert_eq!(
+            statement! { leave }.to_string(),
+            "leave"
         )
     }
 }
