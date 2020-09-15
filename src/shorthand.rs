@@ -3,6 +3,27 @@
 use crate::yul;
 
 /// Creates a Yul literal.
+///
+/// # Examples
+///
+/// Basic usage:
+///
+/// ```
+/// use yultsur::*;
+///
+/// let foo_var = "\"foo\"";
+///
+/// // create a string literal with a string
+/// let foo_1 = literal! { "foo" };
+/// // create a string literal from a variable using parens
+/// let foo_2 = literal! { (foo_var) };
+/// // create a literal from an existing literal
+/// let foo_3 = literal! { [foo_1.clone()] };
+///
+/// assert_eq!(foo_1.to_string(), "\"foo\"");
+/// assert_eq!(foo_2.to_string(), "\"foo\"");
+/// assert_eq!(foo_3.to_string(), "\"foo\"");
+/// ```
 #[macro_export]
 macro_rules! literal {
     {[$e:expr]} => {$e};
@@ -11,12 +32,49 @@ macro_rules! literal {
 }
 
 /// Creates a Yul literal expression.
+///
+/// Same as `literal! { ... }`, except the literal is wrapped in a `yul::Expression`.
+///
+/// # Examples
+///
+/// Basic usage:
+///
+/// ```
+/// use yultsur::*;
+///
+/// let foo = literal_expression! { "foo" };
+/// let forty_two = literal_expression! { 42 };
+///
+/// assert_eq!(foo.to_string(), "\"foo\"");
+/// assert_eq!(forty_two.to_string(), "42");
+/// ```
 #[macro_export]
 macro_rules! literal_expression {
     {$($literal:tt)*} => {yul::Expression::Literal(literal!($($literal)*))};
 }
 
 /// Creates a Yul identifier.
+///
+/// # Examples
+///
+/// Basic usage:
+///
+/// ```
+/// use yultsur::*;
+///
+/// let foo_var = "foo";
+///
+/// // create an identifier explicitly
+/// let foo_1 = identifier! { foo };
+/// // create an identifier from a variable using parens
+/// let foo_2 = identifier! { (foo_var) };
+/// // create an identifier from an existing literal
+/// let foo_3 = identifier! { [foo_1.clone()] };
+///
+/// assert_eq!(foo_1.to_string(), "foo");
+/// assert_eq!(foo_2.to_string(), "foo");
+/// assert_eq!(foo_3.to_string(), "foo");
+/// ```
 #[macro_export]
 macro_rules! identifier {
     {[$e:expr]} => {$e};
@@ -25,6 +83,23 @@ macro_rules! identifier {
 }
 
 /// Creates a vec of Yul identifiers.
+///
+/// # Examples
+///
+/// ```
+/// use yultsur::*;
+///
+/// // create identifiers with
+/// let identifiers_1 = identifiers! { foo bar };
+///
+/// // sandwich identifiers between other identifiers
+/// let identifiers_2 = identifiers! { foo [identifiers_1...] bar };
+///
+/// assert_eq!(
+///     identifiers_2.iter().map(|i| i.to_string()).collect::<Vec<_>>(),
+///     vec!["foo", "foo", "bar", "bar"],
+/// );
+/// ```
 #[macro_export]
 macro_rules! identifiers {
     {@as_vec [$identifiers:tt...]} => { $identifiers.clone() };
@@ -38,12 +113,34 @@ macro_rules! identifiers {
 }
 
 /// Creates a Yul identifier expression.
+///
+/// Same as `identifier! { ... }`, except the returned values is wrapped in an expression.
+///
+/// # Examples
+///
+/// ```
+/// use yultsur::*;
+///
+/// let bar = identifier_expression! { foo };
+/// assert_eq!(bar.to_string(), "foo")
+/// ```
 #[macro_export]
 macro_rules! identifier_expression {
     {$($identifier:tt)*} => {yul::Expression::Identifier(identifier! {$($identifier)*})};
 }
 
 /// Creates a Yul function call.
+///
+/// # Examples
+///
+/// ```
+/// use yultsur::*;
+///
+/// let args = expressions! { arg_1 arg_2 };
+/// let foo = function_call! { foo([args...]) };
+///
+/// assert_eq!(foo.to_string(), "foo(arg_1, arg_2)");
+/// ```
 #[macro_export]
 macro_rules! function_call {
     {[$e:expr]} => {$e};
@@ -56,6 +153,8 @@ macro_rules! function_call {
 }
 
 /// Creates a function call expression.
+///
+/// Same as `function_call { ... }`, except the returned values is wrapped in an expression.
 #[macro_export]
 macro_rules! function_call_expression {
     {$($function_call:tt)*} => {
@@ -64,6 +163,8 @@ macro_rules! function_call_expression {
 }
 
 /// Creates a function call statement.
+///
+/// Same as `function_call { ... }`, except the returned values is wrapped in a statement.
 #[macro_export]
 macro_rules! function_call_statement {
     {$($function_call:tt)*} => {
