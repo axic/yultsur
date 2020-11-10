@@ -234,6 +234,8 @@ macro_rules! statement {
         for_loop! { for { $($pre)* } $condition { $($post)* } { $($body)* } }
     };
     {leave} => {yul::Statement::Leave};
+    {break} => {yul::Statement::Break};
+    {continue} => {yul::Statement::Continue};
 }
 
 /// Creates a vec of Yul statements.
@@ -788,6 +790,22 @@ mod tests {
         assert_eq!(
             statement! { leave }.to_string(),
             "leave"
+        )
+    }
+
+    #[test]
+    fn _continue() {
+        assert_eq!(
+            statement! { continue }.to_string(),
+            "continue"
+        )
+    }
+
+    #[test]
+    fn _break() {
+        assert_eq!(
+            statement! { break }.to_string(),
+            "break"
         )
     }
 }
