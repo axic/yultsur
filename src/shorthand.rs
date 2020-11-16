@@ -257,6 +257,12 @@ macro_rules! block {
     {$($statements:tt)*} => { yul::Block { statements: statements! {$($statements)*} }};
 }
 
+/// Creates a Yul block statement.
+#[macro_export]
+macro_rules! block_statement {
+    {$($statements:tt)*} => { yul::Statement::Block(block! {$($statements)*}) };
+}
+
 /// Creates a Yul function definition.
 #[macro_export]
 macro_rules! function_definition {
@@ -516,6 +522,18 @@ mod tests {
     fn block() {
         assert_eq!(
             block! {
+                (let foo := 42)
+                (bar(foo))
+            }
+                .to_string(),
+            "{ let foo := 42 bar(foo) }"
+        )
+    }
+
+    #[test]
+    fn block_statement() {
+        assert_eq!(
+            block_statement! {
                 (let foo := 42)
                 (bar(foo))
             }
