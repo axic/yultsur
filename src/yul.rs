@@ -44,6 +44,13 @@ pub struct Object {
     pub name: Identifier,
     pub code: Code,
     pub objects: Vec<Object>,
+    pub data: Vec<Data>,
+}
+
+#[derive(Hash, Clone, PartialEq, Debug)]
+pub struct Data {
+    pub name: String,
+    pub value: String,
 }
 
 #[derive(Hash, Clone, PartialEq, Debug)]
@@ -198,7 +205,13 @@ impl fmt::Display for FunctionCall {
 
 impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "object \"{}\" {{ {} {} }}", self.name, self.code, self.objects.iter().map(|o| o.to_string()).collect::<Vec<String>>().join(" "))
+        write!(f, "object \"{}\" {{ {} {} {} }}", self.name, self.code, self.objects.iter().map(|o| o.to_string()).collect::<Vec<String>>().join(" "), self.data.iter().map(|o| o.to_string()).collect::<Vec<String>>().join(" "))
+    }
+}
+
+impl fmt::Display for Data {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "data \"{}\" \"{}\"", self.name, self.value)
     }
 }
 
@@ -612,13 +625,50 @@ mod tests {
                     Object { 
                         name: Identifier { identifier: "Test".to_string(), yultype: None },
                         code: Code { block: Block { statements: vec![] } },
-                        objects: vec![]
+                        objects: vec![],
+                        data: vec![],
                     }
-                ]
+                ],
+                data: vec![]
             }.to_string(),
-            "object \"Name\" { code { } object \"Test\" { code { }  } }"
+            "object \"Name\" { code { } object \"Test\" { code { }   }  }"
         );
     }
+
+    #[test]
+    fn object_with_data() {
+        assert_eq!(
+            Object {
+                name: Identifier {
+                    identifier: "Name".to_string(),
+                    yultype: None,
+                },
+                code: Code { block: Block { statements: vec![] } },
+                objects: vec![
+                    Object {
+                        name: Identifier { identifier: "Test".to_string(), yultype: None },
+                        code: Code { block: Block { statements: vec![] } },
+                        objects: vec![],
+                        data: vec![Data {name: "Data1".to_string(), value: "Value1".to_string() }],
+                    }
+                ],
+                data: vec![Data {name: "Data2".to_string(), value: "Value2".to_string() }],
+            }.to_string(),
+            "object \"Name\" { code { } object \"Test\" { code { }  data \"Data1\" \"Value1\" } data \"Data2\" \"Value2\" }"
+        );
+    }
+
+    #[test]
+    fn object_data_string() {
+        assert_eq!(
+            Data {
+                name: "Name".to_string(),
+                value: "Value".to_string()
+            }.to_string(),
+            "data \"Name\" \"Value\""
+        );
+    }
+
 
     #[test]
     fn code_basic() {
