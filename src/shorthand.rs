@@ -28,7 +28,7 @@ use crate::yul;
 macro_rules! literal {
     {[$e:expr]} => {$e};
     {($e:expr)} => {yul::Literal { literal: $e.to_string(), yultype: None }};
-    {$l:literal} => {yul::Literal { literal: stringify!($l).to_string(), yultype: None }};
+    {$l:tt} => {yul::Literal { literal: stringify!($l).to_string(), yultype: None }};
 }
 
 /// Creates a Yul literal expression.
@@ -178,8 +178,8 @@ macro_rules! expression {
     {[$e:expr]} => {$e};
     {($($expression:tt)*)} => {expression! {$($expression)*}};
     {$name:tt($($args:tt)*)} => {function_call_expression! {$name($($args)*)}};
-    {$l:literal} => {literal_expression! {$l}};
     {$i:ident} => {identifier_expression! {$i}};
+    {$l:tt} => {literal_expression! {$l}};
 }
 
 /// Creates a vec of Yul expressions.
@@ -364,6 +364,15 @@ mod tests {
     use crate::yul;
 
     #[test]
+    fn literal_hex() {
+        assert_eq!(
+            literal! { 0x4200000000000000000000000000000000000000000000000000000000420026 }
+                .to_string(),
+            "0x4200000000000000000000000000000000000000000000000000000000420026"
+        )
+    }
+
+    #[test]
     fn literal_string() {
         assert_eq!(literal! {"foo"}.to_string(), r#""foo""#)
     }
@@ -500,6 +509,15 @@ mod tests {
     }
 
     #[test]
+    fn large_assignment() {
+        assert_eq!(
+            assignment! { foo := 0x4200000000000000000000000000000000000000000000000000000000420026 }
+                .to_string(),
+            "foo := 0x4200000000000000000000000000000000000000000000000000000000420026"
+        )
+    }
+
+    #[test]
     fn statement_function() {
         let _42 = expression! {42};
         let biz = function_call_expression! {biz(bit, coin, [_42])};
@@ -553,7 +571,6 @@ mod tests {
             "{ let foo := 42 bar(foo) }"
         )
     }
-
 
     #[test]
     fn code() {
