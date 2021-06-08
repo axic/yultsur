@@ -198,9 +198,9 @@ macro_rules! expressions {
 /// Creates a Yul variable declaration statement.
 #[macro_export]
 macro_rules! variable_declaration {
-    {let $name:tt := $($expression:tt)*} => {
+    {let $($names:tt),* := $($expression:tt)*} => {
         yul::Statement::VariableDeclaration(yul::VariableDeclaration {
-            identifiers: vec![identifier! {$name}],
+            identifiers: identifiers! {$($names)*},
             expression: Some(expression! {$($expression)*})
         })
     };
@@ -209,9 +209,9 @@ macro_rules! variable_declaration {
 /// Creates a Yul assignment statement.
 #[macro_export]
 macro_rules! assignment {
-    {$name:tt := $($expression:tt)+} => {
+    {$($names:tt),* := $($expression:tt)+} => {
         yul::Statement::Assignment(yul::Assignment {
-            identifiers: vec![identifier! {$name}],
+            identifiers: identifiers! {$($names)*},
             expression: expression! {$($expression)*}
         })
     };
@@ -278,15 +278,11 @@ macro_rules! code_statement {
 /// Creates a Yul function definition.
 #[macro_export]
 macro_rules! function_definition {
-    {function $name:tt($($params:tt),*) $(-> $returns:tt)? {$($statements:tt)*}} => {
+    {function $name:tt($($params:tt),*) $(-> $($returns:tt),*)? {$($statements:tt)*}} => {
         yul::Statement::FunctionDefinition(yul::FunctionDefinition {
             name: identifier! {$name},
             parameters: identifiers! {$($params)*},
-            returns: {
-                let mut returns = vec![];
-                $(returns.push(identifier!{$returns});)*
-                returns
-            },
+            returns: identifiers! {$($($returns)*)?},
             block: block!{$($statements)*},
         })
     };
@@ -468,6 +464,14 @@ mod tests {
     }
 
     #[test]
+    fn variable_declaration_multiple_targets() {
+        assert_eq!(
+            variable_declaration! {let foo, bar := 42}.to_string(),
+            "let foo, bar := 42"
+        )
+    }
+
+    #[test]
     fn variable_declaration_function() {
         assert_eq!(
             variable_declaration! {let foo := foo("bar", 42)}.to_string(),
@@ -506,6 +510,11 @@ mod tests {
     #[test]
     fn assignment() {
         assert_eq!(assignment! {foo := 42}.to_string(), "foo := 42")
+    }
+
+    #[test]
+    fn assignment_multiple_targets() {
+        assert_eq!(assignment! {foo, bar := 42}.to_string(), "foo, bar := 42")
     }
 
     #[test]
@@ -627,6 +636,38 @@ mod tests {
             }
                 .to_string(),
             r#"function foo(bit, coin) -> bar { let baz := add(bit, coin) bar := hello_world(baz, "hi") }"#
+        )
+    }
+
+    #[test]
+    fn function_definition_multiple_returns() {
+        let bit = identifier! {bit};
+
+        assert_eq!(
+            function_definition! {
+                function foo([bit], coin) -> bar, baz {
+                    (let baz := add(bit, coin))
+                    (bar := hello_world(baz, "hi"))
+                }
+            }
+                .to_string(),
+            r#"function foo(bit, coin) -> bar, baz { let baz := add(bit, coin) bar := hello_world(baz, "hi") }"#
+        )
+    }
+
+    #[test]
+    fn function_definition_multiple_returns_inserted() {
+        let returns = identifiers! { bar baz };
+
+        assert_eq!(
+            function_definition! {
+                function foo(bit, coin) -> [returns...] {
+                    (let baz := add(bit, coin))
+                    (bar := hello_world(baz, "hi"))
+                }
+            }
+                .to_string(),
+            r#"function foo(bit, coin) -> bar, baz { let baz := add(bit, coin) bar := hello_world(baz, "hi") }"#
         )
     }
 
