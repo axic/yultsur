@@ -1,4 +1,6 @@
 use std::fmt;
+use std::fmt::Write;
+use indenter::indented;
 
 #[derive(Hash, Clone, PartialEq, Debug)]
 pub enum Type {
@@ -147,27 +149,9 @@ impl fmt::Display for Type {
     }
 }
 
-impl Identifier {
-    pub fn new(identifier: &str) -> Self {
-        Identifier {
-            identifier: identifier.to_string(),
-            yultype: None,
-        }
-    }
-}
-
-impl Literal {
-    pub fn new(literal: &str) -> Self {
-        Literal {
-            literal: literal.to_string(),
-            yultype: None,
-        }
-    }
-}
-
 impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "{}", self.literal));
+        write!(f, "{}", self.literal)?;
         if let Some(yultype) = &self.yultype {
             write!(f, ":{}", yultype)
         } else {
@@ -178,7 +162,7 @@ impl fmt::Display for Literal {
 
 impl fmt::Display for Identifier {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "{}", self.identifier));
+        write!(f, "{}", self.identifier)?;
         if let Some(yultype) = &self.yultype {
             write!(f, ":{}", yultype)
         } else {
@@ -189,8 +173,8 @@ impl fmt::Display for Identifier {
 
 impl fmt::Display for FunctionCall {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "{}(", self.identifier));
-        try!(write!(
+        write!(f, "{}(", self.identifier)?;
+        write!(
             f,
             "{}",
             self.arguments
@@ -198,14 +182,22 @@ impl fmt::Display for FunctionCall {
                 .map(|argument| format!("{}", argument))
                 .collect::<Vec<_>>()
                 .join(", ")
-        ));
+        )?;
         write!(f, ")")
     }
 }
 
 impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "object \"{}\" {{ {} {} {} }}", self.name, self.code, self.objects.iter().map(|o| o.to_string()).collect::<Vec<String>>().join(" "), self.data.iter().map(|o| o.to_string()).collect::<Vec<String>>().join(" "))
+        write!(f, "object \"{}\" {{\n", self.name)?;
+        write!(indented(f), "{}\n", self.code)?;
+        for object in self.objects.iter() {
+            write!(indented(f), "{}\n", object)?;
+        }
+        for data in self.data.iter() {
+            write!(indented(f), "{}\n", data)?;
+        }
+        write!(f, "}}")
     }
 }
 
@@ -223,8 +215,8 @@ impl fmt::Display for Code {
 
 impl fmt::Display for FunctionDefinition {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "function {}(", self.name));
-        try!(write!(
+        write!(f, "function {}(", self.name)?;
+        write!(
             f,
             "{}",
             self.parameters
@@ -232,11 +224,11 @@ impl fmt::Display for FunctionDefinition {
                 .map(|identifier| format!("{}", identifier))
                 .collect::<Vec<_>>()
                 .join(", ")
-        ));
-        try!(write!(f, ")"));
+        )?;
+        write!(f, ")")?;
         if self.returns.len() > 0 {
-            try!(write!(f, " -> "));
-            try!(write!(
+            write!(f, " -> ")?;
+            write!(
                 f,
                 "{}",
                 self.returns
@@ -244,7 +236,7 @@ impl fmt::Display for FunctionDefinition {
                     .map(|identifier| format!("{}", identifier))
                     .collect::<Vec<_>>()
                     .join(", ")
-            ));
+            )?;
         }
         write!(f, " {}", self.block)
     }
@@ -256,8 +248,8 @@ impl fmt::Display for VariableDeclaration {
         if self.identifiers.len() == 0 {
             panic!("VariableDeclaration must have identifiers")
         }
-        try!(write!(f, "let "));
-        try!(write!(
+        write!(f, "let ")?;
+        write!(
             f,
             "{}",
             self.identifiers
@@ -265,7 +257,7 @@ impl fmt::Display for VariableDeclaration {
                 .map(|identifier| format!("{}", identifier))
                 .collect::<Vec<_>>()
                 .join(", ")
-        ));
+        )?;
         if let Some(expression) = &self.expression {
             write!(f, " := {}", expression)
         } else {
@@ -280,7 +272,7 @@ impl fmt::Display for Assignment {
         if self.identifiers.len() == 0 {
             panic!("Assignment must have identifiers")
         }
-        try!(write!(
+        write!(
             f,
             "{}",
             self.identifiers
@@ -288,7 +280,7 @@ impl fmt::Display for Assignment {
                 .map(|identifier| format!("{}", identifier))
                 .collect::<Vec<_>>()
                 .join(", ")
-        ));
+        )?;
         write!(f, " := {}", self.expression)
     }
 }
@@ -325,9 +317,9 @@ impl fmt::Display for Case {
 
 impl fmt::Display for Switch {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "switch {} ", self.expression));
+        write!(f, "switch {}", self.expression)?;
         for case in &self.cases {
-            try!(write!(f, "{} ", case));
+            write!(f, "\n{}", case)?;
         }
         write!(f, "")
     }
@@ -337,7 +329,7 @@ impl fmt::Display for ForLoop {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "for {} {} {} {}",
+            "for {}\n{}\n{}\n{}",
             self.pre, self.condition, self.post, self.body
         )
     }
@@ -367,11 +359,11 @@ impl fmt::Display for Statement {
 
 impl fmt::Display for Block {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "{{"));
-        for (_, statement) in self.statements.iter().enumerate() {
-            try!(write!(f, " {}", statement));
+        write!(f, "{{\n")?;
+        for statement in self.statements.iter() {
+            write!(indented(f), "{}\n", statement)?;
         }
-        write!(f, " }}")
+        write!(f, "}}")
     }
 }
 
@@ -478,13 +470,13 @@ mod tests {
                 }),
                 block: Block { statements: vec![] },
             }.to_string(),
-            "if literal { }"
+            "if literal {\n}"
         );
     }
 
     #[test]
     fn block_empty() {
-        assert_eq!(Block { statements: vec![] }.to_string(), "{ }");
+        assert_eq!(Block { statements: vec![] }.to_string(), "{\n}");
     }
 
     #[test]
@@ -493,7 +485,7 @@ mod tests {
             Block {
                 statements: vec![Statement::Block(Block { statements: vec![] })],
             }.to_string(),
-            "{ { } }"
+            "{\n    {\n    }\n}"
         );
     }
 
@@ -506,7 +498,7 @@ mod tests {
                     yultype: None,
                 }))],
             }.to_string(),
-            "{ literal }"
+            "{\n    literal\n}"
         );
     }
 
@@ -631,7 +623,14 @@ mod tests {
                 ],
                 data: vec![]
             }.to_string(),
-            "object \"Name\" { code { } object \"Test\" { code { }   }  }"
+r#"object "Name" {
+    code {
+    }
+    object "Test" {
+        code {
+        }
+    }
+}"#
         );
     }
 
@@ -654,7 +653,16 @@ mod tests {
                 ],
                 data: vec![Data {name: "Data2".to_string(), value: "Value2".to_string() }],
             }.to_string(),
-            "object \"Name\" { code { } object \"Test\" { code { }  data \"Data1\" \"Value1\" } data \"Data2\" \"Value2\" }"
+r#"object "Name" {
+    code {
+    }
+    object "Test" {
+        code {
+        }
+        data "Data1" "Value1"
+    }
+    data "Data2" "Value2"
+}"#
         );
     }
 
@@ -676,7 +684,7 @@ mod tests {
             Code {
                 block: Block { statements: vec![] },
             }.to_string(),
-            "code { }"
+            "code {\n}"
         );
     }
 
@@ -692,7 +700,7 @@ mod tests {
                 returns: vec![],
                 block: Block { statements: vec![] },
             }.to_string(),
-            "function name() { }"
+            "function name() {\n}"
         );
     }
 
@@ -711,7 +719,7 @@ mod tests {
                 returns: vec![],
                 block: Block { statements: vec![] },
             }.to_string(),
-            "function name(a) { }"
+            "function name(a) {\n}"
         );
     }
 
@@ -730,7 +738,7 @@ mod tests {
                 }],
                 block: Block { statements: vec![] },
             }.to_string(),
-            "function name() -> a { }"
+            "function name() -> a {\n}"
         );
     }
 
@@ -764,7 +772,7 @@ mod tests {
                 ],
                 block: Block { statements: vec![] },
             }.to_string(),
-            "function name(a, b) -> c, d { }"
+            "function name(a, b) -> c, d {\n}"
         );
     }
 
@@ -778,7 +786,7 @@ mod tests {
                 }),
                 block: Block { statements: vec![] },
             }.to_string(),
-            "case literal { }"
+            "case literal {\n}"
         );
     }
 
@@ -789,7 +797,7 @@ mod tests {
                 literal: None,
                 block: Block { statements: vec![] },
             }.to_string(),
-            "default { }"
+            "default {\n}"
         );
     }
 
@@ -815,7 +823,7 @@ mod tests {
                     },
                 ],
             }.to_string(),
-            "switch 3 case 1 { } default { } "
+            "switch 3\ncase 1 {\n}\ndefault {\n}"
         );
     }
 
@@ -831,7 +839,7 @@ mod tests {
                 post: Block { statements: vec![] },
                 body: Block { statements: vec![] },
             }.to_string(),
-            "for { } 1 { } { }"
+            "for {\n}\n1\n{\n}\n{\n}"
         );
     }
 }

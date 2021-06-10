@@ -1,7 +1,5 @@
 //! This module contains a set of macros for shorthand Yul AST generation.
 
-use crate::yul;
-
 /// Creates a Yul literal.
 ///
 /// # Examples
@@ -565,7 +563,10 @@ mod tests {
                 (bar(foo))
             }
                 .to_string(),
-            "{ let foo := 42 bar(foo) }"
+r#"{
+    let foo := 42
+    bar(foo)
+}"#
         )
     }
 
@@ -577,7 +578,7 @@ mod tests {
                 (bar(foo))
             }
                 .to_string(),
-            "{ let foo := 42 bar(foo) }"
+            "{\n    let foo := 42\n    bar(foo)\n}"
         )
     }
 
@@ -589,7 +590,7 @@ mod tests {
                 (bar(foo))
             }
                 .to_string(),
-            "code { let foo := 42 bar(foo) }"
+            "code {\n    let foo := 42\n    bar(foo)\n}"
         )
     }
 
@@ -601,7 +602,7 @@ mod tests {
                 (bar(foo))
             }
                 .to_string(),
-            "code { let foo := 42 bar(foo) }"
+            "code {\n    let foo := 42\n    bar(foo)\n}"
         )
     }
 
@@ -619,7 +620,12 @@ mod tests {
                 (bar(foo))
             }
                 .to_string(),
-            "{ let foo := 42 let bar := 2 blockchain(_3d) bar(foo) }"
+r#"{
+    let foo := 42
+    let bar := 2
+    blockchain(_3d)
+    bar(foo)
+}"#
         )
     }
 
@@ -635,7 +641,10 @@ mod tests {
                 }
             }
                 .to_string(),
-            r#"function foo(bit, coin) -> bar { let baz := add(bit, coin) bar := hello_world(baz, "hi") }"#
+r#"function foo(bit, coin) -> bar {
+    let baz := add(bit, coin)
+    bar := hello_world(baz, "hi")
+}"#
         )
     }
 
@@ -651,7 +660,10 @@ mod tests {
                 }
             }
                 .to_string(),
-            r#"function foo(bit, coin) -> bar, baz { let baz := add(bit, coin) bar := hello_world(baz, "hi") }"#
+r#"function foo(bit, coin) -> bar, baz {
+    let baz := add(bit, coin)
+    bar := hello_world(baz, "hi")
+}"#
         )
     }
 
@@ -667,7 +679,10 @@ mod tests {
                 }
             }
                 .to_string(),
-            r#"function foo(bit, coin) -> bar, baz { let baz := add(bit, coin) bar := hello_world(baz, "hi") }"#
+r#"function foo(bit, coin) -> bar, baz {
+    let baz := add(bit, coin)
+    bar := hello_world(baz, "hi")
+}"#
         )
     }
 
@@ -682,7 +697,10 @@ mod tests {
                     (bar := hello_world(baz, "hi"))
                 }
             }.to_string(),
-            r#"function foo(bit, coin) { let baz := add(bit, coin) bar := hello_world(baz, "hi") }"#
+r#"function foo(bit, coin) {
+    let baz := add(bit, coin)
+    bar := hello_world(baz, "hi")
+}"#
         )
     }
 
@@ -707,17 +725,28 @@ mod tests {
                     (bar(bing))
                 })
             }.to_string(),
-            r#"switch foo(1, "s") case 1 { bar(42) } case 42 { bar(420) baz("block", chain) } default { let bing := bing("bong") bar(bing) } "#
+r#"switch foo(1, "s")
+case 1 {
+    bar(42)
+}
+case 42 {
+    bar(420)
+    baz("block", chain)
+}
+default {
+    let bing := bing("bong")
+    bar(bing)
+}"#
         }
-        #[test]
+    }
 
-        fn switch_no_default() {
-            let foo = expression! {foo(1, "s")};
-            let bing = expression! {bing("bong")};
-            let _42 = literal! {42};
+    #[test]
+    fn switch_no_default() {
+        let foo = expression! {foo(1, "s")};
+        let _42 = literal! {42};
 
-            assert_eq! {
-                switch! {
+        assert_eq! {
+            switch! {
                 switch [foo]
                 (case 1 {
                     (bar(42))
@@ -727,9 +756,16 @@ mod tests {
                     (baz("block", chain))
                 })
             }.to_string(),
-                r#"switch foo(1, "s") case 1 { bar(42) } case 42 { bar(420) baz("block", chain) } "#
-            }
-        }   }
+r#"switch foo(1, "s")
+case 1 {
+    bar(42)
+}
+case 42 {
+    bar(420)
+    baz("block", chain)
+}"#
+        }
+    }
 
     #[test]
     fn statements() {
@@ -755,7 +791,7 @@ mod tests {
                 [best_statement]
                 (if 0 { (call(42)) })
             }.iter().map(|s| s.to_string()).collect::<Vec<String>>().join(" "),
-            r#"let kung := foo let a := my_function("hello", world("42")) b := add(a, 2) ip := man() let value := food(1, 2) let another_value := 42 foo := "42 bar 42" if 0 { call(42) }"#
+            "let kung := foo let a := my_function(\"hello\", world(\"42\")) b := add(a, 2) ip := man() let value := food(1, 2) let another_value := 42 foo := \"42 bar 42\" if 0 {\n    call(42)\n}"
         )
     }
 
@@ -783,7 +819,16 @@ mod tests {
                 [foo_func]
                 [bar_func]
             }.to_string(),
-            r#"{ let a := b function foo(test, one, two) { log("hello_world") } function foo(two, three, four) -> return_val { let a := test(two, three, four) return_val := a } }"#
+r#"{
+    let a := b
+    function foo(test, one, two) {
+        log("hello_world")
+    }
+    function foo(two, three, four) -> return_val {
+        let a := test(two, three, four)
+        return_val := a
+    }
+}"#
         )
     }
 
@@ -803,7 +848,18 @@ mod tests {
                     })
                 )
             }.to_string(),
-            r#"{ let a := 40 let b := 2 switch add(a, b) case 42 { let c := 2 } case "3d" { foo(0) bar("test") }  }"#
+r#"{
+    let a := 40
+    let b := 2
+    switch add(a, b)
+    case 42 {
+        let c := 2
+    }
+    case "3d" {
+        foo(0)
+        bar("test")
+    }
+}"#
         )
     }
 
@@ -831,7 +887,17 @@ mod tests {
                 [cases...]
                 [default]
             }.to_string(),
-            r#"switch cat("f", s) case "foo" { test(42) } case "bar" { hello_world(42) a := b } default { c := 4 } "#
+r#"switch cat("f", s)
+case "foo" {
+    test(42)
+}
+case "bar" {
+    hello_world(42)
+    a := b
+}
+default {
+    c := 4
+}"#
         )
     }
 
@@ -839,7 +905,9 @@ mod tests {
     fn _if() {
         assert_eq!(
             _if! { if (eq(foo, 0)) { (let a := b) } }.to_string(),
-            "if eq(foo, 0) { let a := b }"
+r#"if eq(foo, 0) {
+    let a := b
+}"#
         )
     }
 
@@ -852,7 +920,16 @@ mod tests {
                     (result := mul(result, base))
                 }
             }.to_string(),
-            "for { let i := 0 } lt(i, exponent) { i := add(i, 1) } { result := mul(result, base) }"
+r#"for {
+    let i := 0
+}
+lt(i, exponent)
+{
+    i := add(i, 1)
+}
+{
+    result := mul(result, base)
+}"#
         )
     }
 
@@ -865,7 +942,16 @@ mod tests {
                     (result := mul(result, base))
                 }
             }.to_string(),
-            "for { let i := 0 } lt(i, exponent) { i := add(i, 1) } { result := mul(result, base) }"
+r#"for {
+    let i := 0
+}
+lt(i, exponent)
+{
+    i := add(i, 1)
+}
+{
+    result := mul(result, base)
+}"#
         )
     }
 
