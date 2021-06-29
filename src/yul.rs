@@ -329,7 +329,7 @@ impl fmt::Display for ForLoop {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "for {}\n{}\n{}\n{}",
+            "for {} {} {} {}",
             self.pre, self.condition, self.post, self.body
         )
     }
@@ -359,11 +359,17 @@ impl fmt::Display for Statement {
 
 impl fmt::Display for Block {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{{\n")?;
-        for statement in self.statements.iter() {
-            write!(indented(f), "{}\n", statement)?;
+        if self.statements.len() == 0 {
+            write!(f, "{{ }}")
+        }else if self.statements.len() == 1 {
+            write!(f, "{{ {} }}", self.statements[0])
+        } else {
+            write!(f, "{{\n")?;
+            for statement in self.statements.iter() {
+                write!(indented(f), "{}\n", statement)?;
+            }
+            write!(f, "}}")
         }
-        write!(f, "}}")
     }
 }
 
@@ -470,13 +476,13 @@ mod tests {
                 }),
                 block: Block { statements: vec![] },
             }.to_string(),
-            "if literal {\n}"
+            "if literal { }"
         );
     }
 
     #[test]
     fn block_empty() {
-        assert_eq!(Block { statements: vec![] }.to_string(), "{\n}");
+        assert_eq!(Block { statements: vec![] }.to_string(), "{ }");
     }
 
     #[test]
@@ -485,7 +491,7 @@ mod tests {
             Block {
                 statements: vec![Statement::Block(Block { statements: vec![] })],
             }.to_string(),
-            "{\n    {\n    }\n}"
+            "{ { } }"
         );
     }
 
@@ -494,11 +500,11 @@ mod tests {
         assert_eq!(
             Block {
                 statements: vec![Statement::Expression(Expression::Literal(Literal {
-                    literal: "literal".to_string(),
+                    literal: "42".to_string(),
                     yultype: None,
                 }))],
             }.to_string(),
-            "{\n    literal\n}"
+            "{ 42 }"
         );
     }
 
@@ -624,11 +630,9 @@ mod tests {
                 data: vec![]
             }.to_string(),
 r#"object "Name" {
-    code {
-    }
+    code { }
     object "Test" {
-        code {
-        }
+        code { }
     }
 }"#
         );
@@ -654,11 +658,9 @@ r#"object "Name" {
                 data: vec![Data {name: "Data2".to_string(), value: "Value2".to_string() }],
             }.to_string(),
 r#"object "Name" {
-    code {
-    }
+    code { }
     object "Test" {
-        code {
-        }
+        code { }
         data "Data1" "Value1"
     }
     data "Data2" "Value2"
@@ -677,14 +679,13 @@ r#"object "Name" {
         );
     }
 
-
     #[test]
     fn code_basic() {
         assert_eq!(
             Code {
                 block: Block { statements: vec![] },
             }.to_string(),
-            "code {\n}"
+            "code { }"
         );
     }
 
@@ -700,7 +701,7 @@ r#"object "Name" {
                 returns: vec![],
                 block: Block { statements: vec![] },
             }.to_string(),
-            "function name() {\n}"
+            "function name() { }"
         );
     }
 
@@ -719,7 +720,7 @@ r#"object "Name" {
                 returns: vec![],
                 block: Block { statements: vec![] },
             }.to_string(),
-            "function name(a) {\n}"
+            "function name(a) { }"
         );
     }
 
@@ -738,7 +739,7 @@ r#"object "Name" {
                 }],
                 block: Block { statements: vec![] },
             }.to_string(),
-            "function name() -> a {\n}"
+            "function name() -> a { }"
         );
     }
 
@@ -772,7 +773,7 @@ r#"object "Name" {
                 ],
                 block: Block { statements: vec![] },
             }.to_string(),
-            "function name(a, b) -> c, d {\n}"
+            "function name(a, b) -> c, d { }"
         );
     }
 
@@ -786,7 +787,7 @@ r#"object "Name" {
                 }),
                 block: Block { statements: vec![] },
             }.to_string(),
-            "case literal {\n}"
+            "case literal { }"
         );
     }
 
@@ -797,7 +798,7 @@ r#"object "Name" {
                 literal: None,
                 block: Block { statements: vec![] },
             }.to_string(),
-            "default {\n}"
+            "default { }"
         );
     }
 
@@ -823,7 +824,7 @@ r#"object "Name" {
                     },
                 ],
             }.to_string(),
-            "switch 3\ncase 1 {\n}\ndefault {\n}"
+            "switch 3\ncase 1 { }\ndefault { }"
         );
     }
 
@@ -839,7 +840,7 @@ r#"object "Name" {
                 post: Block { statements: vec![] },
                 body: Block { statements: vec![] },
             }.to_string(),
-            "for {\n}\n1\n{\n}\n{\n}"
+            "for { } 1 { } { }"
         );
     }
 }

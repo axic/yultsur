@@ -726,9 +726,7 @@ r#"function foo(bit, coin) {
                 })
             }.to_string(),
 r#"switch foo(1, "s")
-case 1 {
-    bar(42)
-}
+case 1 { bar(42) }
 case 42 {
     bar(420)
     baz("block", chain)
@@ -757,9 +755,7 @@ default {
                 })
             }.to_string(),
 r#"switch foo(1, "s")
-case 1 {
-    bar(42)
-}
+case 1 { bar(42) }
 case 42 {
     bar(420)
     baz("block", chain)
@@ -791,7 +787,7 @@ case 42 {
                 [best_statement]
                 (if 0 { (call(42)) })
             }.iter().map(|s| s.to_string()).collect::<Vec<String>>().join(" "),
-            "let kung := foo let a := my_function(\"hello\", world(\"42\")) b := add(a, 2) ip := man() let value := food(1, 2) let another_value := 42 foo := \"42 bar 42\" if 0 {\n    call(42)\n}"
+            "let kung := foo let a := my_function(\"hello\", world(\"42\")) b := add(a, 2) ip := man() let value := food(1, 2) let another_value := 42 foo := \"42 bar 42\" if 0 { call(42) }"
         )
     }
 
@@ -821,9 +817,7 @@ case 42 {
             }.to_string(),
 r#"{
     let a := b
-    function foo(test, one, two) {
-        log("hello_world")
-    }
+    function foo(test, one, two) { log("hello_world") }
     function foo(two, three, four) -> return_val {
         let a := test(two, three, four)
         return_val := a
@@ -852,9 +846,7 @@ r#"{
     let a := 40
     let b := 2
     switch add(a, b)
-    case 42 {
-        let c := 2
-    }
+    case 42 { let c := 2 }
     case "3d" {
         foo(0)
         bar("test")
@@ -888,16 +880,12 @@ r#"{
                 [default]
             }.to_string(),
 r#"switch cat("f", s)
-case "foo" {
-    test(42)
-}
+case "foo" { test(42) }
 case "bar" {
     hello_world(42)
     a := b
 }
-default {
-    c := 4
-}"#
+default { c := 4 }"#
         )
     }
 
@@ -905,9 +893,7 @@ default {
     fn _if() {
         assert_eq!(
             _if! { if (eq(foo, 0)) { (let a := b) } }.to_string(),
-r#"if eq(foo, 0) {
-    let a := b
-}"#
+            "if eq(foo, 0) { let a := b }"
         )
     }
 
@@ -918,17 +904,12 @@ r#"if eq(foo, 0) {
                 for { (let i := 0) } (lt(i, exponent)) { (i := add(i, 1)) }
                 {
                     (result := mul(result, base))
+                    (call())
                 }
             }.to_string(),
-r#"for {
-    let i := 0
-}
-lt(i, exponent)
-{
-    i := add(i, 1)
-}
-{
+r#"for { let i := 0 } lt(i, exponent) { i := add(i, 1) } {
     result := mul(result, base)
+    call()
 }"#
         )
     }
@@ -940,17 +921,12 @@ lt(i, exponent)
                 for { (let i := 0) } (lt(i, exponent)) { (i := add(i, 1)) }
                 {
                     (result := mul(result, base))
+                    (call())
                 }
             }.to_string(),
-r#"for {
-    let i := 0
-}
-lt(i, exponent)
-{
-    i := add(i, 1)
-}
-{
+r#"for { let i := 0 } lt(i, exponent) { i := add(i, 1) } {
     result := mul(result, base)
+    call()
 }"#
         )
     }
