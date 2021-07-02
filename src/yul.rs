@@ -2,7 +2,7 @@ use std::fmt;
 use std::fmt::Write;
 use indenter::indented;
 
-#[derive(Hash, Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Debug, PartialOrd, Ord, Eq)]
 pub enum Type {
     Bool,
     Uint256,
@@ -18,30 +18,30 @@ pub enum Type {
     Custom(String),
 }
 
-#[derive(Hash, Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Debug, PartialOrd, Ord, Eq)]
 pub struct Block {
     pub statements: Vec<Statement>,
 }
 
-#[derive(Hash, Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Debug, PartialOrd, Ord, Eq)]
 pub struct Literal {
     pub literal: String,
     pub yultype: Option<Type>,
 }
 
-#[derive(Hash, Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Debug, PartialOrd, Ord, Eq)]
 pub struct Identifier {
     pub identifier: String,
     pub yultype: Option<Type>,
 }
 
-#[derive(Hash, Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Debug, PartialOrd, Ord, Eq)]
 pub struct FunctionCall {
     pub identifier: Identifier,
     pub arguments: Vec<Expression>,
 }
 
-#[derive(Hash, Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Debug, PartialOrd, Ord, Eq)]
 pub struct Object {
     pub name: Identifier,
     pub code: Code,
@@ -49,18 +49,18 @@ pub struct Object {
     pub data: Vec<Data>,
 }
 
-#[derive(Hash, Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Debug, PartialOrd, Ord, Eq)]
 pub struct Data {
     pub name: String,
     pub value: String,
 }
 
-#[derive(Hash, Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Debug, PartialOrd, Ord, Eq)]
 pub struct Code {
     pub block: Block,
 }
 
-#[derive(Hash, Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Debug, PartialOrd, Ord, Eq)]
 pub struct FunctionDefinition {
     pub name: Identifier,
     pub parameters: Vec<Identifier>,
@@ -68,44 +68,44 @@ pub struct FunctionDefinition {
     pub block: Block,
 }
 
-#[derive(Hash, Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Debug, PartialOrd, Ord, Eq)]
 pub struct VariableDeclaration {
     pub identifiers: Vec<Identifier>,
     pub expression: Option<Expression>,
 }
 
-#[derive(Hash, Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Debug, PartialOrd, Ord, Eq)]
 pub struct Assignment {
     pub identifiers: Vec<Identifier>,
     pub expression: Expression,
 }
 
-#[derive(Hash, Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Debug, PartialOrd, Ord, Eq)]
 pub enum Expression {
     Literal(Literal),
     Identifier(Identifier),
     FunctionCall(FunctionCall),
 }
 
-#[derive(Hash, Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Debug, PartialOrd, Ord, Eq)]
 pub struct If {
     pub expression: Expression,
     pub block: Block,
 }
 
-#[derive(Hash, Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Debug, PartialOrd, Ord, Eq)]
 pub struct Case {
     pub literal: Option<Literal>,
     pub block: Block,
 }
 
-#[derive(Hash, Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Debug, PartialOrd, Ord, Eq)]
 pub struct Switch {
     pub expression: Expression,
     pub cases: Vec<Case>,
 }
 
-#[derive(Hash, Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Debug, PartialOrd, Ord, Eq)]
 pub struct ForLoop {
     pub pre: Block,
     pub condition: Expression,
@@ -113,7 +113,7 @@ pub struct ForLoop {
     pub body: Block,
 }
 
-#[derive(Hash, Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Debug, PartialOrd, Ord, Eq)]
 pub enum Statement {
     Block(Block),
     Object(Object),
