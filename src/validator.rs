@@ -5,10 +5,10 @@ pub trait Validator: Send + Sync {
 }
 
 impl Validator for Type {
-    fn validate(&self, typed: bool) -> Result<(), String> {
+    fn validate(&self, _typed: bool) -> Result<(), String> {
         match *self {
             // FIXME: validate that custom type name doesn't have space, etc.
-            Type::Custom(ref custom) => Ok(()),
+            Type::Custom(ref _custom) => Ok(()),
             _ => Ok(()),
         }
     }
