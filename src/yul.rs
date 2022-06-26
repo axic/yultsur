@@ -145,7 +145,7 @@ impl Literal {
 
 impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "{}", self.literal));
+        write!(f, "{}", self.literal)?;
         if let Some(yultype) = &self.yultype {
             write!(f, ":{}", yultype)
         } else {
@@ -156,7 +156,7 @@ impl fmt::Display for Literal {
 
 impl fmt::Display for Identifier {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "{}", self.identifier));
+        write!(f, "{}", self.identifier)?;
         if let Some(yultype) = &self.yultype {
             write!(f, ":{}", yultype)
         } else {
@@ -167,8 +167,8 @@ impl fmt::Display for Identifier {
 
 impl fmt::Display for FunctionCall {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "{}(", self.identifier));
-        try!(write!(
+        write!(f, "{}(", self.identifier)?;
+        write!(
             f,
             "{}",
             self.arguments
@@ -176,15 +176,15 @@ impl fmt::Display for FunctionCall {
                 .map(|argument| format!("{}", argument))
                 .collect::<Vec<_>>()
                 .join(", ")
-        ));
+        )?;
         write!(f, ")")
     }
 }
 
 impl fmt::Display for FunctionDefinition {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "function {}(", self.name));
-        try!(write!(
+        write!(f, "function {}(", self.name)?;
+        write!(
             f,
             "{}",
             self.parameters
@@ -192,11 +192,11 @@ impl fmt::Display for FunctionDefinition {
                 .map(|identifier| format!("{}", identifier))
                 .collect::<Vec<_>>()
                 .join(", ")
-        ));
-        try!(write!(f, ")"));
+        )?;
+        write!(f, ")")?;
         if self.returns.len() > 0 {
-            try!(write!(f, " -> "));
-            try!(write!(
+            write!(f, " -> ")?;
+            write!(
                 f,
                 "{}",
                 self.returns
@@ -204,7 +204,7 @@ impl fmt::Display for FunctionDefinition {
                     .map(|identifier| format!("{}", identifier))
                     .collect::<Vec<_>>()
                     .join(", ")
-            ));
+            )?;
         }
         write!(f, " {}", self.block)
     }
@@ -216,8 +216,8 @@ impl fmt::Display for VariableDeclaration {
         if self.identifiers.len() == 0 {
             panic!("VariableDeclaration must have identifiers")
         }
-        try!(write!(f, "let "));
-        try!(write!(
+        write!(f, "let ")?;
+        write!(
             f,
             "{}",
             self.identifiers
@@ -225,7 +225,7 @@ impl fmt::Display for VariableDeclaration {
                 .map(|identifier| format!("{}", identifier))
                 .collect::<Vec<_>>()
                 .join(", ")
-        ));
+        )?;
         if let Some(expression) = &self.expression {
             write!(f, " := {}", expression)
         } else {
@@ -240,7 +240,7 @@ impl fmt::Display for Assignment {
         if self.identifiers.len() == 0 {
             panic!("Assignment must have identifiers")
         }
-        try!(write!(
+        write!(
             f,
             "{}",
             self.identifiers
@@ -248,7 +248,7 @@ impl fmt::Display for Assignment {
                 .map(|identifier| format!("{}", identifier))
                 .collect::<Vec<_>>()
                 .join(", ")
-        ));
+        )?;
         write!(f, " := {}", self.expression)
     }
 }
@@ -285,9 +285,9 @@ impl fmt::Display for Case {
 
 impl fmt::Display for Switch {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "switch {} ", self.expression));
+        write!(f, "switch {} ", self.expression)?;
         for case in &self.cases {
-            try!(write!(f, "{} ", case));
+            write!(f, "{} ", case)?;
         }
         write!(f, "")
     }
@@ -324,9 +324,9 @@ impl fmt::Display for Statement {
 
 impl fmt::Display for Block {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "{{"));
+        write!(f, "{{")?;
         for (_, statement) in self.statements.iter().enumerate() {
-            try!(write!(f, " {}", statement));
+            write!(f, " {}", statement)?;
         }
         write!(f, " }}")
     }
