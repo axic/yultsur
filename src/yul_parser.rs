@@ -205,7 +205,7 @@ impl VariableDeclaration {
     fn from(pair: Pair<Rule>) -> VariableDeclaration {
         let mut token_iter = pair.into_inner();
 
-        let identifiers = Identifier::list_typed(token_iter.next().unwrap());
+        let identifiers = Identifier::list(token_iter.next().unwrap());
         let expression = token_iter.next().map(|e| Expression::from(e));
 
         VariableDeclaration {
@@ -223,10 +223,12 @@ impl FunctionDefinition {
         let current = token_iter.next().unwrap();
         let (parameters, current) = match current.as_rule() {
             Rule::typed_parameter_list => (Identifier::list_typed(current), token_iter.next().unwrap()),
+            Rule::untyped_parameter_list => (Identifier::list(current), token_iter.next().unwrap()),
             _ => (vec![], current)
         };
         let (returns, current) = match current.as_rule() {
             Rule::typed_identifier_list => (Identifier::list_typed(current), token_iter.next().unwrap()),
+            Rule::untyped_identifier_list => (Identifier::list(current), token_iter.next().unwrap()),
             _ => (vec![], current)
         };
         let block = Block::from(current);
@@ -362,6 +364,11 @@ use super::*;
     #[test]
     fn empty_block() {
         test_file("examples/empty_block.yul");
+    }
+
+    #[test]
+    fn untyped() {
+        test_file("examples/untyped.yul");
     }
 
     fn test_file(filename: &str) {

@@ -13,9 +13,9 @@ statement = {
 		| continue_statement)
 }
 
-function_definition = { "function" ~ identifier ~ "(" ~ (typed_parameter_list)? ~ ")" ~ ("->" ~ typed_identifier_list)? ~ block }
+function_definition = { "function" ~ identifier ~ "(" ~ (untyped_parameter_list)? ~ ")" ~ ("->" ~ untyped_identifier_list)? ~ block }
 
-variable_declaration = { "let" ~ typed_identifier_list ~ (":=" ~ expression)? }
+variable_declaration = { "let" ~ untyped_identifier_list ~ (":=" ~ expression)? }
 
 assignment = { identifier_list ~ ":=" ~ expression }
 
@@ -53,13 +53,11 @@ untyped_identifier_list = { identifier ~ ("," ~ identifier)* }
 typed_identifier = { identifier ~ ":" ~ type_name }
 
 literal = {
-	(number_literal
+	number_literal
 		| string_literal
 		| hex_literal
 		| true_literal
-		| false_literal)
-	~ ":"
-	~ type_name
+		| false_literal
 }
 
 number_literal = { hex_number | decimal_number }
