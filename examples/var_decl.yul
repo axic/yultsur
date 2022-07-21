@@ -1,1 +1,1 @@
-{ let x:u256, z:u256 := a let y:u256 := 2:uint256 let z:u256 := f() }
+{ let x, z := a let y := 2 let z := f() }
