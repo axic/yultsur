@@ -344,7 +344,8 @@ mod tests {
             Literal {
                 literal: "testliteral".to_string(),
                 yultype: None,
-            }.to_string(),
+            }
+            .to_string(),
             "testliteral"
         );
     }
@@ -355,7 +356,8 @@ mod tests {
             Literal {
                 literal: "testliteral".to_string(),
                 yultype: Some(Type::Uint256),
-            }.to_string(),
+            }
+            .to_string(),
             "testliteral:u256"
         );
     }
@@ -366,7 +368,8 @@ mod tests {
             Literal {
                 literal: "testliteral".to_string(),
                 yultype: Some(Type::Custom("memptr".to_string())),
-            }.to_string(),
+            }
+            .to_string(),
             "testliteral:memptr"
         );
     }
@@ -377,7 +380,8 @@ mod tests {
             Identifier {
                 name: "testidentifier".to_string(),
                 yultype: None,
-            }.to_string(),
+            }
+            .to_string(),
             "testidentifier"
         );
     }
@@ -388,7 +392,8 @@ mod tests {
             Identifier {
                 name: "testidentifier".to_string(),
                 yultype: Some(Type::Uint256),
-            }.to_string(),
+            }
+            .to_string(),
             "testidentifier:u256"
         );
     }
@@ -399,7 +404,8 @@ mod tests {
             Identifier {
                 name: "testidentifier".to_string(),
                 yultype: Some(Type::Custom("memptr".to_string())),
-            }.to_string(),
+            }
+            .to_string(),
             "testidentifier:memptr"
         );
     }
@@ -422,7 +428,8 @@ mod tests {
                         yultype: None,
                     }),
                 ],
-            }.to_string(),
+            }
+            .to_string(),
             "test(test, literal)"
         );
     }
@@ -436,7 +443,8 @@ mod tests {
                     yultype: None,
                 }),
                 body: Block { statements: vec![] },
-            }.to_string(),
+            }
+            .to_string(),
             "if literal { }"
         );
     }
@@ -451,7 +459,8 @@ mod tests {
         assert_eq!(
             Block {
                 statements: vec![Statement::Block(Block { statements: vec![] })],
-            }.to_string(),
+            }
+            .to_string(),
             "{ { } }"
         );
     }
@@ -464,7 +473,8 @@ mod tests {
                     literal: "literal".to_string(),
                     yultype: None,
                 }))],
-            }.to_string(),
+            }
+            .to_string(),
             "{ literal }"
         );
     }
@@ -481,7 +491,8 @@ mod tests {
                     literal: "1".to_string(),
                     yultype: None,
                 }),
-            }.to_string(),
+            }
+            .to_string(),
             "a := 1"
         );
     }
@@ -508,7 +519,8 @@ mod tests {
                     literal: "1".to_string(),
                     yultype: None,
                 }),
-            }.to_string(),
+            }
+            .to_string(),
             "a, b, c := 1"
         );
     }
@@ -522,7 +534,8 @@ mod tests {
                     yultype: None,
                 }],
                 value: None,
-            }.to_string(),
+            }
+            .to_string(),
             "let a"
         );
     }
@@ -539,7 +552,8 @@ mod tests {
                     literal: "1".to_string(),
                     yultype: None,
                 })),
-            }.to_string(),
+            }
+            .to_string(),
             "let a := 1"
         );
     }
@@ -566,7 +580,8 @@ mod tests {
                     literal: "1".to_string(),
                     yultype: None,
                 })),
-            }.to_string(),
+            }
+            .to_string(),
             "let a, b, c := 1"
         );
     }
@@ -582,7 +597,8 @@ mod tests {
                 parameters: vec![],
                 returns: vec![],
                 body: Block { statements: vec![] },
-            }.to_string(),
+            }
+            .to_string(),
             "function name() { }"
         );
     }
@@ -601,7 +617,8 @@ mod tests {
                 }],
                 returns: vec![],
                 body: Block { statements: vec![] },
-            }.to_string(),
+            }
+            .to_string(),
             "function name(a) { }"
         );
     }
@@ -620,7 +637,8 @@ mod tests {
                     yultype: None,
                 }],
                 body: Block { statements: vec![] },
-            }.to_string(),
+            }
+            .to_string(),
             "function name() -> a { }"
         );
     }
@@ -654,7 +672,8 @@ mod tests {
                     },
                 ],
                 body: Block { statements: vec![] },
-            }.to_string(),
+            }
+            .to_string(),
             "function name(a, b) -> c, d { }"
         );
     }
@@ -668,7 +687,8 @@ mod tests {
                     yultype: None,
                 }),
                 body: Block { statements: vec![] },
-            }.to_string(),
+            }
+            .to_string(),
             "case literal { }"
         );
     }
@@ -679,7 +699,8 @@ mod tests {
             Case {
                 literal: None,
                 body: Block { statements: vec![] },
-            }.to_string(),
+            }
+            .to_string(),
             "default { }"
         );
     }
@@ -705,7 +726,8 @@ mod tests {
                         body: Block { statements: vec![] },
                     },
                 ],
-            }.to_string(),
+            }
+            .to_string(),
             "switch 3 case 1 { } default { }"
         );
     }
@@ -721,14 +743,18 @@ mod tests {
                 }),
                 post: Block { statements: vec![] },
                 body: Block { statements: vec![] },
-            }.to_string(),
+            }
+            .to_string(),
             "for { } 1 { } { }"
         );
     }
     #[test]
     fn leave() {
         assert_eq!(
-            Block { statements: vec![Statement::Leave] }.to_string(),
+            Block {
+                statements: vec![Statement::Leave]
+            }
+            .to_string(),
             "{ leave }"
         );
     }

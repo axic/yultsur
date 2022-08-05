@@ -115,16 +115,18 @@ mod tests {
             !Literal {
                 literal: "test".to_string(),
                 yultype: None
-            }.validate(false)
-                .is_err(),
+            }
+            .validate(false)
+            .is_err(),
             ""
         );
         assert!(
             Literal {
                 literal: "test".to_string(),
                 yultype: None
-            }.validate(true)
-                .is_err(),
+            }
+            .validate(true)
+            .is_err(),
             ""
         );
     }
@@ -135,8 +137,9 @@ mod tests {
             !Literal {
                 literal: "test".to_string(),
                 yultype: Some(Type::Bool)
-            }.validate(true)
-                .is_err(),
+            }
+            .validate(true)
+            .is_err(),
             ""
         );
     }
@@ -150,8 +153,9 @@ mod tests {
                     yultype: None,
                 }),
                 body: Block { statements: vec![] },
-            }.validate(false)
-                .is_err(),
+            }
+            .validate(false)
+            .is_err(),
             ""
         );
     }
@@ -179,8 +183,9 @@ mod tests {
                         },
                     ],
                 })],
-            }.validate(false)
-                .is_err(),
+            }
+            .validate(false)
+            .is_err(),
             ""
         );
     }

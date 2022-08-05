@@ -1,7 +1,7 @@
 use yul::*;
 
-use pest::Parser;
 use pest::iterators::Pair;
+use pest::Parser;
 
 #[derive(Parser)]
 #[grammar = "yul.pest"]
@@ -27,7 +27,7 @@ impl Identifier {
 
         Identifier {
             name,
-            yultype: None
+            yultype: None,
         }
     }
 
@@ -36,10 +36,7 @@ impl Identifier {
         let name = Identifier::from(token_iter.next().unwrap());
         let yultype = token_iter.next().map(|t| Type::from(t));
 
-        Identifier {
-            name,
-            yultype
-        }
+        Identifier { name, yultype }
     }
 
     fn list(pair: Pair<Rule>) -> Vec<Identifier> {
@@ -49,7 +46,7 @@ impl Identifier {
                 Rule::identifier => {
                     identifiers.push(Identifier::from_untyped(p));
                 }
-                _ => unreachable!()
+                _ => unreachable!(),
             }
         }
         identifiers
@@ -62,7 +59,7 @@ impl Identifier {
                 Rule::typed_identifier => {
                     identifiers.push(Identifier::from_typed(p));
                 }
-                _ => unreachable!()
+                _ => unreachable!(),
             }
         }
         identifiers
@@ -86,9 +83,9 @@ impl Type {
                 "s64" => Type::Int64,
                 "s128" => Type::Int128,
                 "s256" => Type::Int256,
-                _ => unreachable!()
+                _ => unreachable!(),
             },
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 }
@@ -99,10 +96,7 @@ impl Literal {
         let literal = Identifier::from(token_iter.next().unwrap());
         let yultype = token_iter.next().map(|t| Type::from(t));
 
-        Literal {
-            literal,
-            yultype
-        }
+        Literal { literal, yultype }
     }
 }
 
@@ -110,14 +104,16 @@ impl FunctionCall {
     fn from(pair: Pair<Rule>) -> FunctionCall {
         let mut token_iter = pair.into_inner();
         let function = Identifier::from_untyped(token_iter.next().unwrap());
-        let arguments = token_iter.map(|p| match p.as_rule() {
-            Rule::expression => Expression::from(p),
-            _ => unreachable!()
-        }).collect();
+        let arguments = token_iter
+            .map(|p| match p.as_rule() {
+                Rule::expression => Expression::from(p),
+                _ => unreachable!(),
+            })
+            .collect();
 
         FunctionCall {
             function,
-            arguments
+            arguments,
         }
     }
 }
@@ -126,11 +122,11 @@ impl Expression {
     fn from(pair: Pair<Rule>) -> Expression {
         let mut token_iter = pair.into_inner();
         let p = token_iter.next().unwrap();
-        match p.as_rule()  {
+        match p.as_rule() {
             Rule::function_call => Expression::FunctionCall(FunctionCall::from(p)),
             Rule::identifier => Expression::Identifier(Identifier::from_untyped(p)),
             Rule::literal => Expression::Literal(Literal::from(p)),
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 }
@@ -143,7 +139,7 @@ impl Case {
 
         Case {
             literal: Some(literal),
-            body
+            body,
         }
     }
 
@@ -153,26 +149,24 @@ impl Case {
 
         Case {
             literal: None,
-            body
+            body,
         }
     }
 }
-
 
 impl Switch {
     fn from(pair: Pair<Rule>) -> Switch {
         let mut token_iter = pair.into_inner();
         let expression = Expression::from(token_iter.next().unwrap());
-        let cases = token_iter.map(|p| { match p.as_rule() {
-            Rule::case => Case::from(p),
-            Rule::default => Case::from_default(p),
-            _ => unreachable!()
-        }}).collect();
+        let cases = token_iter
+            .map(|p| match p.as_rule() {
+                Rule::case => Case::from(p),
+                Rule::default => Case::from_default(p),
+                _ => unreachable!(),
+            })
+            .collect();
 
-        Switch {
-            expression,
-            cases
-        }
+        Switch { expression, cases }
     }
 }
 
@@ -182,10 +176,7 @@ impl Assignment {
         let variables = Identifier::list(token_iter.next().unwrap());
         let value = Expression::from(token_iter.next().unwrap());
 
-        Assignment {
-            variables,
-            value
-        }
+        Assignment { variables, value }
     }
 }
 
@@ -196,10 +187,7 @@ impl VariableDeclaration {
         let variables = Identifier::list(token_iter.next().unwrap());
         let value = token_iter.next().map(|e| Expression::from(e));
 
-        VariableDeclaration {
-            variables,
-            value
-        }
+        VariableDeclaration { variables, value }
     }
 }
 
@@ -210,14 +198,20 @@ impl FunctionDefinition {
 
         let current = token_iter.next().unwrap();
         let (parameters, current) = match current.as_rule() {
-            Rule::typed_parameter_list => (Identifier::list_typed(current), token_iter.next().unwrap()),
+            Rule::typed_parameter_list => {
+                (Identifier::list_typed(current), token_iter.next().unwrap())
+            }
             Rule::untyped_parameter_list => (Identifier::list(current), token_iter.next().unwrap()),
-            _ => (vec![], current)
+            _ => (vec![], current),
         };
         let (returns, current) = match current.as_rule() {
-            Rule::typed_identifier_list => (Identifier::list_typed(current), token_iter.next().unwrap()),
-            Rule::untyped_identifier_list => (Identifier::list(current), token_iter.next().unwrap()),
-            _ => (vec![], current)
+            Rule::typed_identifier_list => {
+                (Identifier::list_typed(current), token_iter.next().unwrap())
+            }
+            Rule::untyped_identifier_list => {
+                (Identifier::list(current), token_iter.next().unwrap())
+            }
+            _ => (vec![], current),
         };
         let body = Block::from(current);
 
@@ -225,7 +219,7 @@ impl FunctionDefinition {
             name,
             parameters,
             returns,
-            body
+            body,
         }
     }
 }
@@ -236,10 +230,7 @@ impl If {
         let condition = Expression::from(token_iter.next().unwrap());
         let body = Block::from(token_iter.next().unwrap());
 
-        If {
-            condition,
-            body
-        }
+        If { condition, body }
     }
 }
 
@@ -255,7 +246,7 @@ impl ForLoop {
             pre,
             condition,
             post,
-            body
+            body,
         }
     }
 }
@@ -267,7 +258,9 @@ impl Statement {
         match p.as_rule() {
             Rule::block => Statement::Block(Block::from(p)),
             Rule::function_definition => Statement::FunctionDefinition(FunctionDefinition::from(p)),
-            Rule::variable_declaration => Statement::VariableDeclaration(VariableDeclaration::from(p)),
+            Rule::variable_declaration => {
+                Statement::VariableDeclaration(VariableDeclaration::from(p))
+            }
             Rule::assignment => Statement::Assignment(Assignment::from(p)),
             Rule::expression => Statement::Expression(Expression::from(p)),
             Rule::switch => Statement::Switch(Switch::from(p)),
@@ -276,7 +269,7 @@ impl Statement {
             Rule::break_statement => Statement::Break,
             Rule::continue_statement => Statement::Continue,
             Rule::leave => Statement::Leave,
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 }
@@ -289,7 +282,7 @@ impl Block {
                 Rule::statement => {
                     statements.push(Statement::from(p));
                 }
-                _ => unreachable!()
+                _ => unreachable!(),
             }
         }
         Block { statements }
@@ -303,7 +296,7 @@ pub fn parse_block(source: &str) -> Block {
 
 #[cfg(test)]
 mod tests {
-use super::*;
+    use super::*;
 
     #[test]
     fn continue_statement() {
@@ -373,9 +366,6 @@ use super::*;
     fn test_file(filename: &str) {
         let source = file_to_string(filename);
         let block = parse_block(&source);
-        assert_eq!(
-            source,
-            block.to_string()
-        );
+        assert_eq!(source, block.to_string());
     }
 }
