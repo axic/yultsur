@@ -7,10 +7,11 @@ statement = {
 		| assignment
 		| if_statement
 		| for_loop
-		| expression
 		| switch
 		| break_statement
-		| continue_statement)
+		| continue_statement
+		| expression
+	)
 }
 
 function_definition = { "function" ~ identifier ~ "(" ~ (untyped_parameter_list)? ~ ")" ~ ("->" ~ untyped_identifier_list)? ~ block }
@@ -23,7 +24,7 @@ expression = { function_call | identifier | literal }
 
 if_statement = { "if" ~ expression ~ block }
 
-switch = { "switch" ~ expression ~ ((case)+ ~ (default)? | default) }
+switch = { "switch" ~ expression ~ (((case)+ ~ (default)?) | default) }
 
 case = { "case" ~ literal ~ block }
 
