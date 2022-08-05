@@ -29,13 +29,13 @@ pub struct Literal {
 
 #[derive(Hash, Clone, PartialEq, Debug)]
 pub struct Identifier {
-    pub identifier: String,
+    pub name: String,
     pub yultype: Option<Type>,
 }
 
 #[derive(Hash, Clone, PartialEq, Debug)]
 pub struct FunctionCall {
-    pub identifier: Identifier,
+    pub function: Identifier,
     pub arguments: Vec<Expression>,
 }
 
@@ -44,19 +44,19 @@ pub struct FunctionDefinition {
     pub name: Identifier,
     pub parameters: Vec<Identifier>,
     pub returns: Vec<Identifier>,
-    pub block: Block,
+    pub body: Block,
 }
 
 #[derive(Hash, Clone, PartialEq, Debug)]
 pub struct VariableDeclaration {
-    pub identifiers: Vec<Identifier>,
-    pub expression: Option<Expression>,
+    pub variables: Vec<Identifier>,
+    pub value: Option<Expression>,
 }
 
 #[derive(Hash, Clone, PartialEq, Debug)]
 pub struct Assignment {
-    pub identifiers: Vec<Identifier>,
-    pub expression: Expression,
+    pub variables: Vec<Identifier>,
+    pub value: Expression,
 }
 
 #[derive(Hash, Clone, PartialEq, Debug)]
@@ -68,14 +68,14 @@ pub enum Expression {
 
 #[derive(Hash, Clone, PartialEq, Debug)]
 pub struct If {
-    pub expression: Expression,
-    pub block: Block,
+    pub condition: Expression,
+    pub body: Block,
 }
 
 #[derive(Hash, Clone, PartialEq, Debug)]
 pub struct Case {
     pub literal: Option<Literal>,
-    pub block: Block,
+    pub body: Block,
 }
 
 #[derive(Hash, Clone, PartialEq, Debug)]
@@ -129,7 +129,7 @@ impl fmt::Display for Type {
 impl Identifier {
     pub fn new(identifier: &str) -> Self {
         Identifier {
-            identifier: identifier.to_string(),
+            name: identifier.to_string(),
             yultype: None,
         }
     }
@@ -157,7 +157,7 @@ impl fmt::Display for Literal {
 
 impl fmt::Display for Identifier {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.identifier)?;
+        write!(f, "{}", self.name)?;
         if let Some(yultype) = &self.yultype {
             write!(f, ":{}", yultype)
         } else {
@@ -168,7 +168,7 @@ impl fmt::Display for Identifier {
 
 impl fmt::Display for FunctionCall {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}(", self.identifier)?;
+        write!(f, "{}(", self.function)?;
         write!(
             f,
             "{}",
@@ -207,27 +207,27 @@ impl fmt::Display for FunctionDefinition {
                     .join(", ")
             )?;
         }
-        write!(f, " {}", self.block)
+        write!(f, " {}", self.body)
     }
 }
 
 impl fmt::Display for VariableDeclaration {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // FIXME: should validate this on the new/default trait
-        if self.identifiers.len() == 0 {
+        if self.variables.len() == 0 {
             panic!("VariableDeclaration must have identifiers")
         }
         write!(f, "let ")?;
         write!(
             f,
             "{}",
-            self.identifiers
+            self.variables
                 .iter()
                 .map(|identifier| format!("{}", identifier))
                 .collect::<Vec<_>>()
                 .join(", ")
         )?;
-        if let Some(expression) = &self.expression {
+        if let Some(expression) = &self.value {
             write!(f, " := {}", expression)
         } else {
             write!(f, "")
@@ -238,19 +238,19 @@ impl fmt::Display for VariableDeclaration {
 impl fmt::Display for Assignment {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // FIXME: should validate this on the new/default trait
-        if self.identifiers.len() == 0 {
+        if self.variables.len() == 0 {
             panic!("Assignment must have identifiers")
         }
         write!(
             f,
             "{}",
-            self.identifiers
+            self.variables
                 .iter()
                 .map(|identifier| format!("{}", identifier))
                 .collect::<Vec<_>>()
                 .join(", ")
         )?;
-        write!(f, " := {}", self.expression)
+        write!(f, " := {}", self.value)
     }
 }
 
@@ -266,7 +266,7 @@ impl fmt::Display for Expression {
 
 impl fmt::Display for If {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "if {} {}", self.expression, self.block)
+        write!(f, "if {} {}", self.condition, self.body)
     }
 }
 
@@ -277,9 +277,9 @@ impl fmt::Display for Case {
             if literal.literal.len() == 0 {
                 panic!("Case with literal should not be empty");
             }
-            write!(f, "case {} {}", literal, self.block)
+            write!(f, "case {} {}", literal, self.body)
         } else {
-            write!(f, "default {}", self.block)
+            write!(f, "default {}", self.body)
         }
     }
 }
@@ -375,7 +375,7 @@ mod tests {
     fn identifier() {
         assert_eq!(
             Identifier {
-                identifier: "testidentifier".to_string(),
+                name: "testidentifier".to_string(),
                 yultype: None,
             }.to_string(),
             "testidentifier"
@@ -386,7 +386,7 @@ mod tests {
     fn identifier_typed() {
         assert_eq!(
             Identifier {
-                identifier: "testidentifier".to_string(),
+                name: "testidentifier".to_string(),
                 yultype: Some(Type::Uint256),
             }.to_string(),
             "testidentifier:u256"
@@ -397,7 +397,7 @@ mod tests {
     fn identifierr_custom_typed() {
         assert_eq!(
             Identifier {
-                identifier: "testidentifier".to_string(),
+                name: "testidentifier".to_string(),
                 yultype: Some(Type::Custom("memptr".to_string())),
             }.to_string(),
             "testidentifier:memptr"
@@ -408,13 +408,13 @@ mod tests {
     fn functioncall() {
         assert_eq!(
             FunctionCall {
-                identifier: Identifier {
-                    identifier: "test".to_string(),
+                function: Identifier {
+                    name: "test".to_string(),
                     yultype: None,
                 },
                 arguments: vec![
                     Expression::Identifier(Identifier {
-                        identifier: "test".to_string(),
+                        name: "test".to_string(),
                         yultype: None,
                     }),
                     Expression::Literal(Literal {
@@ -431,11 +431,11 @@ mod tests {
     fn if_statement() {
         assert_eq!(
             If {
-                expression: Expression::Literal(Literal {
+                condition: Expression::Literal(Literal {
                     literal: "literal".to_string(),
                     yultype: None,
                 }),
-                block: Block { statements: vec![] },
+                body: Block { statements: vec![] },
             }.to_string(),
             "if literal { }"
         );
@@ -473,11 +473,11 @@ mod tests {
     fn assignment_single() {
         assert_eq!(
             Assignment {
-                identifiers: vec![Identifier {
-                    identifier: "a".to_string(),
+                variables: vec![Identifier {
+                    name: "a".to_string(),
                     yultype: None,
                 }],
-                expression: Expression::Literal(Literal {
+                value: Expression::Literal(Literal {
                     literal: "1".to_string(),
                     yultype: None,
                 }),
@@ -490,21 +490,21 @@ mod tests {
     fn assignment_multi() {
         assert_eq!(
             Assignment {
-                identifiers: vec![
+                variables: vec![
                     Identifier {
-                        identifier: "a".to_string(),
+                        name: "a".to_string(),
                         yultype: None,
                     },
                     Identifier {
-                        identifier: "b".to_string(),
+                        name: "b".to_string(),
                         yultype: None,
                     },
                     Identifier {
-                        identifier: "c".to_string(),
+                        name: "c".to_string(),
                         yultype: None,
                     },
                 ],
-                expression: Expression::Literal(Literal {
+                value: Expression::Literal(Literal {
                     literal: "1".to_string(),
                     yultype: None,
                 }),
@@ -517,11 +517,11 @@ mod tests {
     fn variabledeclaration_empty() {
         assert_eq!(
             VariableDeclaration {
-                identifiers: vec![Identifier {
-                    identifier: "a".to_string(),
+                variables: vec![Identifier {
+                    name: "a".to_string(),
                     yultype: None,
                 }],
-                expression: None,
+                value: None,
             }.to_string(),
             "let a"
         );
@@ -531,11 +531,11 @@ mod tests {
     fn variabledeclaration_single() {
         assert_eq!(
             VariableDeclaration {
-                identifiers: vec![Identifier {
-                    identifier: "a".to_string(),
+                variables: vec![Identifier {
+                    name: "a".to_string(),
                     yultype: None,
                 }],
-                expression: Some(Expression::Literal(Literal {
+                value: Some(Expression::Literal(Literal {
                     literal: "1".to_string(),
                     yultype: None,
                 })),
@@ -548,21 +548,21 @@ mod tests {
     fn variabledeclaration_multi() {
         assert_eq!(
             VariableDeclaration {
-                identifiers: vec![
+                variables: vec![
                     Identifier {
-                        identifier: "a".to_string(),
+                        name: "a".to_string(),
                         yultype: None,
                     },
                     Identifier {
-                        identifier: "b".to_string(),
+                        name: "b".to_string(),
                         yultype: None,
                     },
                     Identifier {
-                        identifier: "c".to_string(),
+                        name: "c".to_string(),
                         yultype: None,
                     },
                 ],
-                expression: Some(Expression::Literal(Literal {
+                value: Some(Expression::Literal(Literal {
                     literal: "1".to_string(),
                     yultype: None,
                 })),
@@ -576,12 +576,12 @@ mod tests {
         assert_eq!(
             FunctionDefinition {
                 name: Identifier {
-                    identifier: "name".to_string(),
+                    name: "name".to_string(),
                     yultype: None,
                 },
                 parameters: vec![],
                 returns: vec![],
-                block: Block { statements: vec![] },
+                body: Block { statements: vec![] },
             }.to_string(),
             "function name() { }"
         );
@@ -592,15 +592,15 @@ mod tests {
         assert_eq!(
             FunctionDefinition {
                 name: Identifier {
-                    identifier: "name".to_string(),
+                    name: "name".to_string(),
                     yultype: None,
                 },
                 parameters: vec![Identifier {
-                    identifier: "a".to_string(),
+                    name: "a".to_string(),
                     yultype: None,
                 }],
                 returns: vec![],
-                block: Block { statements: vec![] },
+                body: Block { statements: vec![] },
             }.to_string(),
             "function name(a) { }"
         );
@@ -611,15 +611,15 @@ mod tests {
         assert_eq!(
             FunctionDefinition {
                 name: Identifier {
-                    identifier: "name".to_string(),
+                    name: "name".to_string(),
                     yultype: None,
                 },
                 parameters: vec![],
                 returns: vec![Identifier {
-                    identifier: "a".to_string(),
+                    name: "a".to_string(),
                     yultype: None,
                 }],
-                block: Block { statements: vec![] },
+                body: Block { statements: vec![] },
             }.to_string(),
             "function name() -> a { }"
         );
@@ -630,30 +630,30 @@ mod tests {
         assert_eq!(
             FunctionDefinition {
                 name: Identifier {
-                    identifier: "name".to_string(),
+                    name: "name".to_string(),
                     yultype: None,
                 },
                 parameters: vec![
                     Identifier {
-                        identifier: "a".to_string(),
+                        name: "a".to_string(),
                         yultype: None,
                     },
                     Identifier {
-                        identifier: "b".to_string(),
+                        name: "b".to_string(),
                         yultype: None,
                     },
                 ],
                 returns: vec![
                     Identifier {
-                        identifier: "c".to_string(),
+                        name: "c".to_string(),
                         yultype: None,
                     },
                     Identifier {
-                        identifier: "d".to_string(),
+                        name: "d".to_string(),
                         yultype: None,
                     },
                 ],
-                block: Block { statements: vec![] },
+                body: Block { statements: vec![] },
             }.to_string(),
             "function name(a, b) -> c, d { }"
         );
@@ -667,7 +667,7 @@ mod tests {
                     literal: "literal".to_string(),
                     yultype: None,
                 }),
-                block: Block { statements: vec![] },
+                body: Block { statements: vec![] },
             }.to_string(),
             "case literal { }"
         );
@@ -678,7 +678,7 @@ mod tests {
         assert_eq!(
             Case {
                 literal: None,
-                block: Block { statements: vec![] },
+                body: Block { statements: vec![] },
             }.to_string(),
             "default { }"
         );
@@ -698,11 +698,11 @@ mod tests {
                             literal: "1".to_string(),
                             yultype: None,
                         }),
-                        block: Block { statements: vec![] },
+                        body: Block { statements: vec![] },
                     },
                     Case {
                         literal: None,
-                        block: Block { statements: vec![] },
+                        body: Block { statements: vec![] },
                     },
                 ],
             }.to_string(),

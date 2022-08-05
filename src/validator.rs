@@ -149,7 +149,7 @@ mod tests {
                     literal: "".to_string(),
                     yultype: None,
                 }),
-                block: Block { statements: vec![] },
+                body: Block { statements: vec![] },
             }.validate(false)
                 .is_err(),
             ""
@@ -162,7 +162,7 @@ mod tests {
             !Block {
                 statements: vec![Statement::Switch(Switch {
                     expression: Expression::Identifier(Identifier {
-                        identifier: "shouldbebool".to_string(),
+                        name: "shouldbebool".to_string(),
                         yultype: Some(Type::Bool),
                     }),
                     cases: vec![
@@ -171,11 +171,11 @@ mod tests {
                                 literal: "true".to_string(),
                                 yultype: Some(Type::Bool),
                             }),
-                            block: Block { statements: vec![] },
+                            body: Block { statements: vec![] },
                         },
                         Case {
                             literal: None,
-                            block: Block { statements: vec![] },
+                            body: Block { statements: vec![] },
                         },
                     ],
                 })],
