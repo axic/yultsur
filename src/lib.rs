@@ -3,5 +3,6 @@ extern crate pest;
 extern crate pest_derive;
 
 pub mod validator;
+pub mod visitor;
 pub mod yul;
 pub mod yul_parser;
