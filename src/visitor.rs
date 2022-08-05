@@ -1,6 +1,6 @@
 use yul::*;
 
-trait ASTVisitor {
+pub trait ASTVisitor {
     fn enter_statement(&mut self, _st: &Statement) {}
     fn visit_statement(&mut self, st: &Statement) {
         self.enter_statement(st);
