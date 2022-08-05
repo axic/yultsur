@@ -168,18 +168,11 @@ impl Switch {
     fn from(pair: Pair<Rule>) -> Switch {
         let mut token_iter = pair.into_inner();
         let expression = Expression::from(token_iter.next().unwrap());
-        let mut cases: Vec<Case> = vec![];
-        for p in token_iter.next() {
-            match p.as_rule() {
-                Rule::case => {
-                    cases.push(Case::from(p));
-                }
-                Rule::default => {
-                    cases.push(Case::from_default(p));
-                }
-                _ => unreachable!()
-            }
-        }
+        let cases = token_iter.map(|p| { match p.as_rule() {
+            Rule::case => Case::from(p),
+            Rule::default => Case::from_default(p),
+            _ => unreachable!()
+        }}).collect();
 
         Switch {
             expression,

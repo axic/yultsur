@@ -4,12 +4,12 @@ statement = {
 	(block
 		| function_definition
 		| variable_declaration
-		| assignment
 		| if_statement
 		| for_loop
 		| switch
 		| break_statement
 		| continue_statement
+		| assignment
 		| expression
 	)
 }
