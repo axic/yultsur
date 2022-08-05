@@ -110,15 +110,10 @@ impl FunctionCall {
     fn from(pair: Pair<Rule>) -> FunctionCall {
         let mut token_iter = pair.into_inner();
         let identifier = Identifier::from_untyped(token_iter.next().unwrap());
-        let mut arguments: Vec<Expression> = vec![];
-        for p in token_iter.next() {
-            match p.as_rule() {
-                Rule::expression => {
-                    arguments.push(Expression::from(p));
-                }
-                _ => unreachable!()
-            }
-        }
+        let arguments = token_iter.map(|p| match p.as_rule() {
+            Rule::expression => Expression::from(p),
+            _ => unreachable!()
+        }).collect();
 
         FunctionCall {
             identifier,
@@ -362,6 +357,11 @@ use super::*;
     #[test]
     fn untyped() {
         test_file("examples/untyped.yul");
+    }
+
+    #[test]
+    fn function_call() {
+        test_file("examples/function_call.yul");
     }
 
     fn test_file(filename: &str) {
