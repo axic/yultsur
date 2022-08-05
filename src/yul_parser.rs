@@ -23,21 +23,21 @@ impl Identifier {
     }
 
     fn from_untyped(pair: Pair<Rule>) -> Identifier {
-        let identifier = Identifier::from(pair);
+        let name = Identifier::from(pair);
 
         Identifier {
-            identifier,
+            name,
             yultype: None
         }
     }
 
     fn from_typed(pair: Pair<Rule>) -> Identifier {
         let mut token_iter = pair.into_inner();
-        let identifier = Identifier::from(token_iter.next().unwrap());
+        let name = Identifier::from(token_iter.next().unwrap());
         let yultype = token_iter.next().map(|t| Type::from(t));
 
         Identifier {
-            identifier,
+            name,
             yultype
         }
     }
@@ -109,14 +109,14 @@ impl Literal {
 impl FunctionCall {
     fn from(pair: Pair<Rule>) -> FunctionCall {
         let mut token_iter = pair.into_inner();
-        let identifier = Identifier::from_untyped(token_iter.next().unwrap());
+        let function = Identifier::from_untyped(token_iter.next().unwrap());
         let arguments = token_iter.map(|p| match p.as_rule() {
             Rule::expression => Expression::from(p),
             _ => unreachable!()
         }).collect();
 
         FunctionCall {
-            identifier,
+            function,
             arguments
         }
     }
@@ -139,21 +139,21 @@ impl Case {
     fn from(pair: Pair<Rule>) -> Case {
         let mut token_iter = pair.into_inner();
         let literal = Literal::from(token_iter.next().unwrap());
-        let block = Block::from(token_iter.next().unwrap());
+        let body = Block::from(token_iter.next().unwrap());
 
         Case {
             literal: Some(literal),
-            block
+            body
         }
     }
 
     fn from_default(pair: Pair<Rule>) -> Case {
         let mut token_iter = pair.into_inner();
-        let block = Block::from(token_iter.next().unwrap());
+        let body = Block::from(token_iter.next().unwrap());
 
         Case {
             literal: None,
-            block
+            body
         }
     }
 }
@@ -179,12 +179,12 @@ impl Switch {
 impl Assignment {
     fn from(pair: Pair<Rule>) -> Assignment {
         let mut token_iter = pair.into_inner();
-        let identifiers = Identifier::list(token_iter.next().unwrap());
-        let expression = Expression::from(token_iter.next().unwrap());
+        let variables = Identifier::list(token_iter.next().unwrap());
+        let value = Expression::from(token_iter.next().unwrap());
 
         Assignment {
-            identifiers,
-            expression
+            variables,
+            value
         }
     }
 }
@@ -193,12 +193,12 @@ impl VariableDeclaration {
     fn from(pair: Pair<Rule>) -> VariableDeclaration {
         let mut token_iter = pair.into_inner();
 
-        let identifiers = Identifier::list(token_iter.next().unwrap());
-        let expression = token_iter.next().map(|e| Expression::from(e));
+        let variables = Identifier::list(token_iter.next().unwrap());
+        let value = token_iter.next().map(|e| Expression::from(e));
 
         VariableDeclaration {
-            identifiers,
-            expression
+            variables,
+            value
         }
     }
 }
@@ -219,13 +219,13 @@ impl FunctionDefinition {
             Rule::untyped_identifier_list => (Identifier::list(current), token_iter.next().unwrap()),
             _ => (vec![], current)
         };
-        let block = Block::from(current);
+        let body = Block::from(current);
 
         FunctionDefinition {
             name,
             parameters,
             returns,
-            block
+            body
         }
     }
 }
@@ -233,12 +233,12 @@ impl FunctionDefinition {
 impl If {
     fn from(pair: Pair<Rule>) -> If {
         let mut token_iter = pair.into_inner();
-        let expression = Expression::from(token_iter.next().unwrap());
-        let block = Block::from(token_iter.next().unwrap());
+        let condition = Expression::from(token_iter.next().unwrap());
+        let body = Block::from(token_iter.next().unwrap());
 
         If {
-            expression,
-            block
+            condition,
+            body
         }
     }
 }
