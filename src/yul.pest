@@ -9,6 +9,7 @@ statement = {
 		| switch
 		| break_statement
 		| continue_statement
+		| leave
 		| assignment
 		| expression
 	)
@@ -35,6 +36,8 @@ for_loop = { "for" ~ block ~ expression ~ block ~ block }
 break_statement = { "break" }
 
 continue_statement = { "continue" }
+
+leave = { "leave" }
 
 function_call = { identifier ~ "(" ~ (expression ~ ("," ~ expression)*)? ~ ")" }
 

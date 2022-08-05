@@ -275,6 +275,7 @@ impl Statement {
             Rule::for_loop => Statement::ForLoop(ForLoop::from(p)),
             Rule::break_statement => Statement::Break,
             Rule::continue_statement => Statement::Continue,
+            Rule::leave => Statement::Leave,
             _ => unreachable!()
         }
     }
@@ -362,6 +363,11 @@ use super::*;
     #[test]
     fn function_call() {
         test_file("examples/function_call.yul");
+    }
+
+    #[test]
+    fn leave() {
+        test_file("examples/leave.yul");
     }
 
     fn test_file(filename: &str) {
