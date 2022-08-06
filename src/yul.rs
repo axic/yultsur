@@ -29,6 +29,9 @@ pub struct Literal {
 
 #[derive(Hash, Clone, PartialEq, Debug)]
 pub struct Identifier {
+    /// Unique identifier. None for references just after parsing,
+    /// but filled after reference resolving.
+    pub id: Option<u64>,
     pub name: String,
     pub yultype: Option<Type>,
 }
@@ -127,8 +130,9 @@ impl fmt::Display for Type {
 }
 
 impl Identifier {
-    pub fn new(identifier: &str) -> Self {
+    pub fn new(identifier: &str, id: Option<u64>) -> Self {
         Identifier {
+            id,
             name: identifier.to_string(),
             yultype: None,
         }
@@ -378,6 +382,7 @@ mod tests {
     fn identifier() {
         assert_eq!(
             Identifier {
+                id: None,
                 name: "testidentifier".to_string(),
                 yultype: None,
             }
@@ -390,6 +395,7 @@ mod tests {
     fn identifier_typed() {
         assert_eq!(
             Identifier {
+                id: Some(1),
                 name: "testidentifier".to_string(),
                 yultype: Some(Type::Uint256),
             }
@@ -402,6 +408,7 @@ mod tests {
     fn identifierr_custom_typed() {
         assert_eq!(
             Identifier {
+                id: Some(1),
                 name: "testidentifier".to_string(),
                 yultype: Some(Type::Custom("memptr".to_string())),
             }
@@ -415,11 +422,13 @@ mod tests {
         assert_eq!(
             FunctionCall {
                 function: Identifier {
+                    id: None,
                     name: "test".to_string(),
                     yultype: None,
                 },
                 arguments: vec![
                     Expression::Identifier(Identifier {
+                        id: None,
                         name: "test".to_string(),
                         yultype: None,
                     }),
@@ -484,6 +493,7 @@ mod tests {
         assert_eq!(
             Assignment {
                 variables: vec![Identifier {
+                    id: None,
                     name: "a".to_string(),
                     yultype: None,
                 }],
@@ -503,14 +513,17 @@ mod tests {
             Assignment {
                 variables: vec![
                     Identifier {
+                        id: None,
                         name: "a".to_string(),
                         yultype: None,
                     },
                     Identifier {
+                        id: None,
                         name: "b".to_string(),
                         yultype: None,
                     },
                     Identifier {
+                        id: None,
                         name: "c".to_string(),
                         yultype: None,
                     },
@@ -530,6 +543,7 @@ mod tests {
         assert_eq!(
             VariableDeclaration {
                 variables: vec![Identifier {
+                    id: Some(1),
                     name: "a".to_string(),
                     yultype: None,
                 }],
@@ -545,6 +559,7 @@ mod tests {
         assert_eq!(
             VariableDeclaration {
                 variables: vec![Identifier {
+                    id: Some(1),
                     name: "a".to_string(),
                     yultype: None,
                 }],
@@ -564,14 +579,17 @@ mod tests {
             VariableDeclaration {
                 variables: vec![
                     Identifier {
+                        id: Some(1),
                         name: "a".to_string(),
                         yultype: None,
                     },
                     Identifier {
+                        id: Some(2),
                         name: "b".to_string(),
                         yultype: None,
                     },
                     Identifier {
+                        id: Some(3),
                         name: "c".to_string(),
                         yultype: None,
                     },
@@ -591,6 +609,7 @@ mod tests {
         assert_eq!(
             FunctionDefinition {
                 name: Identifier {
+                    id: Some(1),
                     name: "name".to_string(),
                     yultype: None,
                 },
@@ -608,10 +627,12 @@ mod tests {
         assert_eq!(
             FunctionDefinition {
                 name: Identifier {
+                    id: Some(1),
                     name: "name".to_string(),
                     yultype: None,
                 },
                 parameters: vec![Identifier {
+                    id: None,
                     name: "a".to_string(),
                     yultype: None,
                 }],
@@ -628,11 +649,13 @@ mod tests {
         assert_eq!(
             FunctionDefinition {
                 name: Identifier {
+                    id: Some(1),
                     name: "name".to_string(),
                     yultype: None,
                 },
                 parameters: vec![],
                 returns: vec![Identifier {
+                    id: Some(2),
                     name: "a".to_string(),
                     yultype: None,
                 }],
@@ -648,25 +671,30 @@ mod tests {
         assert_eq!(
             FunctionDefinition {
                 name: Identifier {
+                    id: Some(1),
                     name: "name".to_string(),
                     yultype: None,
                 },
                 parameters: vec![
                     Identifier {
+                        id: Some(2),
                         name: "a".to_string(),
                         yultype: None,
                     },
                     Identifier {
+                        id: Some(3),
                         name: "b".to_string(),
                         yultype: None,
                     },
                 ],
                 returns: vec![
                     Identifier {
+                        id: Some(1),
                         name: "c".to_string(),
                         yultype: None,
                     },
                     Identifier {
+                        id: Some(2),
                         name: "d".to_string(),
                         yultype: None,
                     },

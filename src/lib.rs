@@ -2,6 +2,7 @@ extern crate pest;
 #[macro_use]
 extern crate pest_derive;
 
+pub mod resolver;
 pub mod validator;
 pub mod visitor;
 pub mod yul;

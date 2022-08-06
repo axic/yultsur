@@ -22,29 +22,47 @@ impl Identifier {
         pair.as_str().to_string()
     }
 
-    fn from_untyped(pair: Pair<Rule>) -> Identifier {
+    fn from_untyped(pair: Pair<Rule>, next_identifier: &mut u64) -> Identifier {
         let name = Identifier::from(pair);
 
+        // TOOD much nicer to call some function that returns the id
+        *next_identifier += 1;
         Identifier {
+            id: Some(*next_identifier),
             name,
             yultype: None,
         }
     }
 
-    fn from_typed(pair: Pair<Rule>) -> Identifier {
+    fn from_untyped_reference(pair: Pair<Rule>) -> Identifier {
+        let name = Identifier::from(pair);
+
+        Identifier {
+            id: None,
+            name,
+            yultype: None,
+        }
+    }
+
+    fn from_typed(pair: Pair<Rule>, next_identifier: &mut u64) -> Identifier {
         let mut token_iter = pair.into_inner();
         let name = Identifier::from(token_iter.next().unwrap());
         let yultype = token_iter.next().map(|t| Type::from(t));
 
-        Identifier { name, yultype }
+        *next_identifier += 1;
+        Identifier {
+            id: Some(*next_identifier),
+            name,
+            yultype,
+        }
     }
 
-    fn list(pair: Pair<Rule>) -> Vec<Identifier> {
+    fn list(pair: Pair<Rule>, next_identifier: &mut u64) -> Vec<Identifier> {
         let mut identifiers: Vec<Identifier> = vec![];
         for p in pair.into_inner() {
             match p.as_rule() {
                 Rule::identifier => {
-                    identifiers.push(Identifier::from_untyped(p));
+                    identifiers.push(Identifier::from_untyped(p, next_identifier));
                 }
                 _ => unreachable!(),
             }
@@ -52,12 +70,25 @@ impl Identifier {
         identifiers
     }
 
-    fn list_typed(pair: Pair<Rule>) -> Vec<Identifier> {
+    fn list_reference(pair: Pair<Rule>) -> Vec<Identifier> {
+        let mut identifiers: Vec<Identifier> = vec![];
+        for p in pair.into_inner() {
+            match p.as_rule() {
+                Rule::identifier => {
+                    identifiers.push(Identifier::from_untyped_reference(p));
+                }
+                _ => unreachable!(),
+            }
+        }
+        identifiers
+    }
+
+    fn list_typed(pair: Pair<Rule>, next_identifier: &mut u64) -> Vec<Identifier> {
         let mut identifiers: Vec<Identifier> = vec![];
         for p in pair.into_inner() {
             match p.as_rule() {
                 Rule::typed_identifier => {
-                    identifiers.push(Identifier::from_typed(p));
+                    identifiers.push(Identifier::from_typed(p, next_identifier));
                 }
                 _ => unreachable!(),
             }
@@ -101,12 +132,12 @@ impl Literal {
 }
 
 impl FunctionCall {
-    fn from(pair: Pair<Rule>) -> FunctionCall {
+    fn from(pair: Pair<Rule>, next_identifier: &mut u64) -> FunctionCall {
         let mut token_iter = pair.into_inner();
-        let function = Identifier::from_untyped(token_iter.next().unwrap());
+        let function = Identifier::from_untyped_reference(token_iter.next().unwrap());
         let arguments = token_iter
             .map(|p| match p.as_rule() {
-                Rule::expression => Expression::from(p),
+                Rule::expression => Expression::from(p, next_identifier),
                 _ => unreachable!(),
             })
             .collect();
@@ -119,12 +150,12 @@ impl FunctionCall {
 }
 
 impl Expression {
-    fn from(pair: Pair<Rule>) -> Expression {
+    fn from(pair: Pair<Rule>, next_identifier: &mut u64) -> Expression {
         let mut token_iter = pair.into_inner();
         let p = token_iter.next().unwrap();
         match p.as_rule() {
-            Rule::function_call => Expression::FunctionCall(FunctionCall::from(p)),
-            Rule::identifier => Expression::Identifier(Identifier::from_untyped(p)),
+            Rule::function_call => Expression::FunctionCall(FunctionCall::from(p, next_identifier)),
+            Rule::identifier => Expression::Identifier(Identifier::from_untyped_reference(p)),
             Rule::literal => Expression::Literal(Literal::from(p)),
             _ => unreachable!(),
         }
@@ -132,10 +163,10 @@ impl Expression {
 }
 
 impl Case {
-    fn from(pair: Pair<Rule>) -> Case {
+    fn from(pair: Pair<Rule>, next_identifier: &mut u64) -> Case {
         let mut token_iter = pair.into_inner();
         let literal = Literal::from(token_iter.next().unwrap());
-        let body = Block::from(token_iter.next().unwrap());
+        let body = Block::from(token_iter.next().unwrap(), next_identifier);
 
         Case {
             literal: Some(literal),
@@ -143,9 +174,9 @@ impl Case {
         }
     }
 
-    fn from_default(pair: Pair<Rule>) -> Case {
+    fn from_default(pair: Pair<Rule>, next_identifier: &mut u64) -> Case {
         let mut token_iter = pair.into_inner();
-        let body = Block::from(token_iter.next().unwrap());
+        let body = Block::from(token_iter.next().unwrap(), next_identifier);
 
         Case {
             literal: None,
@@ -155,13 +186,13 @@ impl Case {
 }
 
 impl Switch {
-    fn from(pair: Pair<Rule>) -> Switch {
+    fn from(pair: Pair<Rule>, next_identifier: &mut u64) -> Switch {
         let mut token_iter = pair.into_inner();
-        let expression = Expression::from(token_iter.next().unwrap());
+        let expression = Expression::from(token_iter.next().unwrap(), next_identifier);
         let cases = token_iter
             .map(|p| match p.as_rule() {
-                Rule::case => Case::from(p),
-                Rule::default => Case::from_default(p),
+                Rule::case => Case::from(p, next_identifier),
+                Rule::default => Case::from_default(p, next_identifier),
                 _ => unreachable!(),
             })
             .collect();
@@ -171,49 +202,57 @@ impl Switch {
 }
 
 impl Assignment {
-    fn from(pair: Pair<Rule>) -> Assignment {
+    fn from(pair: Pair<Rule>, next_identifier: &mut u64) -> Assignment {
         let mut token_iter = pair.into_inner();
-        let variables = Identifier::list(token_iter.next().unwrap());
-        let value = Expression::from(token_iter.next().unwrap());
+        let variables = Identifier::list_reference(token_iter.next().unwrap());
+        let value = Expression::from(token_iter.next().unwrap(), next_identifier);
 
         Assignment { variables, value }
     }
 }
 
 impl VariableDeclaration {
-    fn from(pair: Pair<Rule>) -> VariableDeclaration {
+    fn from(pair: Pair<Rule>, next_identifier: &mut u64) -> VariableDeclaration {
         let mut token_iter = pair.into_inner();
 
-        let variables = Identifier::list(token_iter.next().unwrap());
-        let value = token_iter.next().map(|e| Expression::from(e));
+        let variables = Identifier::list(token_iter.next().unwrap(), next_identifier);
+        let value = token_iter
+            .next()
+            .map(|e| Expression::from(e, next_identifier));
 
         VariableDeclaration { variables, value }
     }
 }
 
 impl FunctionDefinition {
-    fn from(pair: Pair<Rule>) -> FunctionDefinition {
+    fn from(pair: Pair<Rule>, next_identifier: &mut u64) -> FunctionDefinition {
         let mut token_iter = pair.into_inner();
-        let name = Identifier::from_untyped(token_iter.next().unwrap());
+        let name = Identifier::from_untyped(token_iter.next().unwrap(), next_identifier);
 
         let current = token_iter.next().unwrap();
         let (parameters, current) = match current.as_rule() {
-            Rule::typed_parameter_list => {
-                (Identifier::list_typed(current), token_iter.next().unwrap())
-            }
-            Rule::untyped_parameter_list => (Identifier::list(current), token_iter.next().unwrap()),
+            Rule::typed_parameter_list => (
+                Identifier::list_typed(current, next_identifier),
+                token_iter.next().unwrap(),
+            ),
+            Rule::untyped_parameter_list => (
+                Identifier::list(current, next_identifier),
+                token_iter.next().unwrap(),
+            ),
             _ => (vec![], current),
         };
         let (returns, current) = match current.as_rule() {
-            Rule::typed_identifier_list => {
-                (Identifier::list_typed(current), token_iter.next().unwrap())
-            }
-            Rule::untyped_identifier_list => {
-                (Identifier::list(current), token_iter.next().unwrap())
-            }
+            Rule::typed_identifier_list => (
+                Identifier::list_typed(current, next_identifier),
+                token_iter.next().unwrap(),
+            ),
+            Rule::untyped_identifier_list => (
+                Identifier::list(current, next_identifier),
+                token_iter.next().unwrap(),
+            ),
             _ => (vec![], current),
         };
-        let body = Block::from(current);
+        let body = Block::from(current, next_identifier);
 
         FunctionDefinition {
             name,
@@ -225,22 +264,22 @@ impl FunctionDefinition {
 }
 
 impl If {
-    fn from(pair: Pair<Rule>) -> If {
+    fn from(pair: Pair<Rule>, next_identifier: &mut u64) -> If {
         let mut token_iter = pair.into_inner();
-        let condition = Expression::from(token_iter.next().unwrap());
-        let body = Block::from(token_iter.next().unwrap());
+        let condition = Expression::from(token_iter.next().unwrap(), next_identifier);
+        let body = Block::from(token_iter.next().unwrap(), next_identifier);
 
         If { condition, body }
     }
 }
 
 impl ForLoop {
-    fn from(pair: Pair<Rule>) -> ForLoop {
+    fn from(pair: Pair<Rule>, next_identifier: &mut u64) -> ForLoop {
         let mut token_iter = pair.into_inner();
-        let pre = Block::from(token_iter.next().unwrap());
-        let condition = Expression::from(token_iter.next().unwrap());
-        let post = Block::from(token_iter.next().unwrap());
-        let body = Block::from(token_iter.next().unwrap());
+        let pre = Block::from(token_iter.next().unwrap(), next_identifier);
+        let condition = Expression::from(token_iter.next().unwrap(), next_identifier);
+        let post = Block::from(token_iter.next().unwrap(), next_identifier);
+        let body = Block::from(token_iter.next().unwrap(), next_identifier);
 
         ForLoop {
             pre,
@@ -252,20 +291,22 @@ impl ForLoop {
 }
 
 impl Statement {
-    fn from(pair: Pair<Rule>) -> Statement {
+    fn from(pair: Pair<Rule>, next_identifier: &mut u64) -> Statement {
         let mut token_iter = pair.into_inner();
         let p = token_iter.next().unwrap();
         match p.as_rule() {
-            Rule::block => Statement::Block(Block::from(p)),
-            Rule::function_definition => Statement::FunctionDefinition(FunctionDefinition::from(p)),
-            Rule::variable_declaration => {
-                Statement::VariableDeclaration(VariableDeclaration::from(p))
+            Rule::block => Statement::Block(Block::from(p, next_identifier)),
+            Rule::function_definition => {
+                Statement::FunctionDefinition(FunctionDefinition::from(p, next_identifier))
             }
-            Rule::assignment => Statement::Assignment(Assignment::from(p)),
-            Rule::expression => Statement::Expression(Expression::from(p)),
-            Rule::switch => Statement::Switch(Switch::from(p)),
-            Rule::if_statement => Statement::If(If::from(p)),
-            Rule::for_loop => Statement::ForLoop(ForLoop::from(p)),
+            Rule::variable_declaration => {
+                Statement::VariableDeclaration(VariableDeclaration::from(p, next_identifier))
+            }
+            Rule::assignment => Statement::Assignment(Assignment::from(p, next_identifier)),
+            Rule::expression => Statement::Expression(Expression::from(p, next_identifier)),
+            Rule::switch => Statement::Switch(Switch::from(p, next_identifier)),
+            Rule::if_statement => Statement::If(If::from(p, next_identifier)),
+            Rule::for_loop => Statement::ForLoop(ForLoop::from(p, next_identifier)),
             Rule::break_statement => Statement::Break,
             Rule::continue_statement => Statement::Continue,
             Rule::leave => Statement::Leave,
@@ -275,12 +316,12 @@ impl Statement {
 }
 
 impl Block {
-    fn from(pair: Pair<Rule>) -> Block {
+    fn from(pair: Pair<Rule>, next_identifier: &mut u64) -> Block {
         let mut statements: Vec<Statement> = vec![];
         for p in pair.into_inner() {
             match p.as_rule() {
                 Rule::statement => {
-                    statements.push(Statement::from(p));
+                    statements.push(Statement::from(p, next_identifier));
                 }
                 _ => unreachable!(),
             }
@@ -291,7 +332,8 @@ impl Block {
 
 pub fn parse_block(source: &str) -> Block {
     let mut pairs = BlockParser::parse(Rule::block, &source).unwrap();
-    Block::from(pairs.next().unwrap())
+    let mut next_identifier = 1u64;
+    Block::from(pairs.next().unwrap(), &mut next_identifier)
 }
 
 #[cfg(test)]
