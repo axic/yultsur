@@ -166,7 +166,7 @@ mod tests {
             !Block {
                 statements: vec![Statement::Switch(Switch {
                     expression: Expression::Identifier(Identifier {
-                        id: None,
+                        id: IdentifierID::UnresolvedReference,
                         name: "shouldbebool".to_string(),
                         yultype: Some(Type::Bool),
                     }),
