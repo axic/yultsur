@@ -2,13 +2,17 @@ use std::collections::HashMap;
 use visitor::ASTModifier;
 use yul::*;
 
-pub fn resolve(ast: &mut Block) {
-    Resolver::new().visit_block(ast);
+use dialect::Dialect;
+
+pub fn resolve<D: Dialect>(ast: &mut Block) {
+    Resolver::<D>::new().visit_block(ast);
 }
 
-struct Resolver {
+struct Resolver<D: Dialect> {
     active_variables: Vec<HashMap<String, u64>>,
     active_functions: Vec<HashMap<String, u64>>,
+    // TODO we should not need that.
+    dialect: D,
 }
 
 fn find_symbol(table: &[HashMap<String, u64>], symbol: &String) -> Option<u64> {
@@ -20,44 +24,56 @@ fn find_symbol(table: &[HashMap<String, u64>], symbol: &String) -> Option<u64> {
     None
 }
 
-impl Resolver {
-    fn new() -> Resolver {
-        Resolver {
+impl<D: Dialect> Resolver<D> {
+    fn new() -> Resolver<D> {
+        Resolver::<D> {
             active_variables: Vec::new(),
             active_functions: Vec::new(),
+            dialect: D::new(),
         }
     }
     fn activate_variable(&mut self, symbol: &Identifier) {
         // TODO error handling: the variable should not already be there.
-        self.active_variables
-            .last_mut()
-            .unwrap()
-            .insert(symbol.name.clone(), symbol.id.unwrap());
+        if let IdentifierID::Declaration(id) = symbol.id {
+            self.active_variables
+                .last_mut()
+                .unwrap()
+                .insert(symbol.name.clone(), id);
+        } else {
+            panic!()
+        }
     }
-    fn resolve(&self, symbol: &String) -> u64 {
+    fn resolve(&self, symbol: &String) -> IdentifierID {
+        if D::is_builtin(symbol.as_str()) {
+            return IdentifierID::BuiltinReference;
+        }
         // TODO error handling?
         // TODO we should not find it in both.
         if let Some(id) = find_symbol(&self.active_variables, symbol) {
-            return id;
+            return IdentifierID::Reference(id);
         }
         if let Some(id) = find_symbol(&self.active_functions, symbol) {
-            return id;
+            return IdentifierID::Reference(id);
         }
         assert!(false);
-        0
+        IdentifierID::UnresolvedReference
     }
 }
 
-impl ASTModifier for Resolver {
+impl<D: Dialect> ASTModifier for Resolver<D> {
     fn enter_block(&mut self, block: &mut Block) {
         self.active_variables.push(HashMap::new());
         self.active_functions.push(HashMap::new());
         for st in &block.statements {
             if let Statement::FunctionDefinition(f) = st {
-                self.active_functions
-                    .last_mut()
-                    .unwrap()
-                    .insert(f.name.name.clone(), f.name.id.unwrap());
+                if let IdentifierID::Declaration(id) = f.name.id {
+                    self.active_functions
+                        .last_mut()
+                        .unwrap()
+                        .insert(f.name.name.clone(), id);
+                } else {
+                    panic!()
+                }
             }
         }
     }
@@ -71,8 +87,8 @@ impl ASTModifier for Resolver {
         }
     }
     fn exit_identifier(&mut self, mut identifier: &mut Identifier) {
-        if identifier.id == None {
-            identifier.id = Some(self.resolve(&identifier.name));
+        if identifier.id == IdentifierID::UnresolvedReference {
+            identifier.id = self.resolve(&identifier.name);
         }
     }
     fn visit_function_definition(&mut self, fun_def: &mut FunctionDefinition) {
@@ -84,5 +100,28 @@ impl ASTModifier for Resolver {
         self.visit_block(&mut fun_def.body);
         self.active_variables.pop();
         self.active_variables = outer_variables;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use dialect::EVMDialect;
+
+    #[test]
+    fn with_dialect() {
+        let mut ast = Block {
+            statements: vec![Statement::Expression(Expression::FunctionCall(
+                FunctionCall {
+                    function: Identifier {
+                        id: IdentifierID::UnresolvedReference,
+                        name: "add".to_string(),
+                        yultype: None,
+                    },
+                    arguments: vec![],
+                },
+            ))],
+        };
+        resolve::<EVMDialect>(&mut ast);
     }
 }

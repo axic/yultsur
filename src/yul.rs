@@ -28,10 +28,22 @@ pub struct Literal {
 }
 
 #[derive(Hash, Clone, PartialEq, Debug)]
+pub enum IdentifierID {
+    /// This is where the identifier is declared.
+    /// The parameter is unique across the program.
+    Declaration(u64),
+    /// This is a reference to an identifier declared elsewhere.
+    /// The parameter is the same as the one of the declaration.
+    Reference(u64),
+    /// This is a reference to a builtin symbol.
+    BuiltinReference,
+    /// This is a reference, but it has not yet been resolved.
+    UnresolvedReference,
+}
+
+#[derive(Hash, Clone, PartialEq, Debug)]
 pub struct Identifier {
-    /// Unique identifier. None for references just after parsing,
-    /// but filled after reference resolving.
-    pub id: Option<u64>,
+    pub id: IdentifierID,
     pub name: String,
     pub yultype: Option<Type>,
 }
@@ -130,7 +142,7 @@ impl fmt::Display for Type {
 }
 
 impl Identifier {
-    pub fn new(identifier: &str, id: Option<u64>) -> Self {
+    pub fn new(identifier: &str, id: IdentifierID) -> Self {
         Identifier {
             id,
             name: identifier.to_string(),
@@ -382,7 +394,7 @@ mod tests {
     fn identifier() {
         assert_eq!(
             Identifier {
-                id: None,
+                id: IdentifierID::UnresolvedReference,
                 name: "testidentifier".to_string(),
                 yultype: None,
             }
@@ -395,7 +407,7 @@ mod tests {
     fn identifier_typed() {
         assert_eq!(
             Identifier {
-                id: Some(1),
+                id: IdentifierID::Declaration(1),
                 name: "testidentifier".to_string(),
                 yultype: Some(Type::Uint256),
             }
@@ -408,7 +420,7 @@ mod tests {
     fn identifierr_custom_typed() {
         assert_eq!(
             Identifier {
-                id: Some(1),
+                id: IdentifierID::Declaration(1),
                 name: "testidentifier".to_string(),
                 yultype: Some(Type::Custom("memptr".to_string())),
             }
@@ -422,13 +434,13 @@ mod tests {
         assert_eq!(
             FunctionCall {
                 function: Identifier {
-                    id: None,
+                    id: IdentifierID::UnresolvedReference,
                     name: "test".to_string(),
                     yultype: None,
                 },
                 arguments: vec![
                     Expression::Identifier(Identifier {
-                        id: None,
+                        id: IdentifierID::UnresolvedReference,
                         name: "test".to_string(),
                         yultype: None,
                     }),
@@ -493,7 +505,7 @@ mod tests {
         assert_eq!(
             Assignment {
                 variables: vec![Identifier {
-                    id: None,
+                    id: IdentifierID::UnresolvedReference,
                     name: "a".to_string(),
                     yultype: None,
                 }],
@@ -513,17 +525,17 @@ mod tests {
             Assignment {
                 variables: vec![
                     Identifier {
-                        id: None,
+                        id: IdentifierID::UnresolvedReference,
                         name: "a".to_string(),
                         yultype: None,
                     },
                     Identifier {
-                        id: None,
+                        id: IdentifierID::UnresolvedReference,
                         name: "b".to_string(),
                         yultype: None,
                     },
                     Identifier {
-                        id: None,
+                        id: IdentifierID::UnresolvedReference,
                         name: "c".to_string(),
                         yultype: None,
                     },
@@ -543,7 +555,7 @@ mod tests {
         assert_eq!(
             VariableDeclaration {
                 variables: vec![Identifier {
-                    id: Some(1),
+                    id: IdentifierID::Declaration(1),
                     name: "a".to_string(),
                     yultype: None,
                 }],
@@ -559,7 +571,7 @@ mod tests {
         assert_eq!(
             VariableDeclaration {
                 variables: vec![Identifier {
-                    id: Some(1),
+                    id: IdentifierID::Declaration(1),
                     name: "a".to_string(),
                     yultype: None,
                 }],
@@ -579,17 +591,17 @@ mod tests {
             VariableDeclaration {
                 variables: vec![
                     Identifier {
-                        id: Some(1),
+                        id: IdentifierID::Declaration(1),
                         name: "a".to_string(),
                         yultype: None,
                     },
                     Identifier {
-                        id: Some(2),
+                        id: IdentifierID::Declaration(2),
                         name: "b".to_string(),
                         yultype: None,
                     },
                     Identifier {
-                        id: Some(3),
+                        id: IdentifierID::Declaration(3),
                         name: "c".to_string(),
                         yultype: None,
                     },
@@ -609,7 +621,7 @@ mod tests {
         assert_eq!(
             FunctionDefinition {
                 name: Identifier {
-                    id: Some(1),
+                    id: IdentifierID::Declaration(1),
                     name: "name".to_string(),
                     yultype: None,
                 },
@@ -627,12 +639,12 @@ mod tests {
         assert_eq!(
             FunctionDefinition {
                 name: Identifier {
-                    id: Some(1),
+                    id: IdentifierID::Declaration(1),
                     name: "name".to_string(),
                     yultype: None,
                 },
                 parameters: vec![Identifier {
-                    id: None,
+                    id: IdentifierID::UnresolvedReference,
                     name: "a".to_string(),
                     yultype: None,
                 }],
@@ -649,13 +661,13 @@ mod tests {
         assert_eq!(
             FunctionDefinition {
                 name: Identifier {
-                    id: Some(1),
+                    id: IdentifierID::Declaration(1),
                     name: "name".to_string(),
                     yultype: None,
                 },
                 parameters: vec![],
                 returns: vec![Identifier {
-                    id: Some(2),
+                    id: IdentifierID::Declaration(2),
                     name: "a".to_string(),
                     yultype: None,
                 }],
@@ -671,30 +683,30 @@ mod tests {
         assert_eq!(
             FunctionDefinition {
                 name: Identifier {
-                    id: Some(1),
+                    id: IdentifierID::Declaration(1),
                     name: "name".to_string(),
                     yultype: None,
                 },
                 parameters: vec![
                     Identifier {
-                        id: Some(2),
+                        id: IdentifierID::Declaration(2),
                         name: "a".to_string(),
                         yultype: None,
                     },
                     Identifier {
-                        id: Some(3),
+                        id: IdentifierID::Declaration(3),
                         name: "b".to_string(),
                         yultype: None,
                     },
                 ],
                 returns: vec![
                     Identifier {
-                        id: Some(1),
+                        id: IdentifierID::Declaration(1),
                         name: "c".to_string(),
                         yultype: None,
                     },
                     Identifier {
-                        id: Some(2),
+                        id: IdentifierID::Declaration(2),
                         name: "d".to_string(),
                         yultype: None,
                     },

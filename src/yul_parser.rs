@@ -28,7 +28,7 @@ impl Identifier {
         // TOOD much nicer to call some function that returns the id
         *next_identifier += 1;
         Identifier {
-            id: Some(*next_identifier),
+            id: IdentifierID::Declaration(*next_identifier),
             name,
             yultype: None,
         }
@@ -38,7 +38,7 @@ impl Identifier {
         let name = Identifier::from(pair);
 
         Identifier {
-            id: None,
+            id: IdentifierID::UnresolvedReference,
             name,
             yultype: None,
         }
@@ -51,7 +51,7 @@ impl Identifier {
 
         *next_identifier += 1;
         Identifier {
-            id: Some(*next_identifier),
+            id: IdentifierID::Declaration(*next_identifier),
             name,
             yultype,
         }
