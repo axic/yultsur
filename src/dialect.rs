@@ -8,9 +8,9 @@ pub trait Dialect {
 }
 
 pub struct Builtin {
-    name: String,
-    parameters: u64,
-    returns: u64,
+    pub name: String,
+    pub parameters: u64,
+    pub returns: u64,
 }
 
 pub struct EVMDialect {}
