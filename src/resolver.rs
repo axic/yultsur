@@ -4,15 +4,25 @@ use yul::*;
 
 use dialect::Dialect;
 
-pub fn resolve<D: Dialect>(ast: &mut Block) {
-    Resolver::<D>::new().visit_block(ast);
+/// Resolves all references in the given AST and returns a
+/// hash map from id to function signature for each user-defined function.
+pub fn resolve<D: Dialect>(ast: &mut Block) -> HashMap<u64, FunctionSignature> {
+    let mut r = Resolver::<D>::new();
+    r.visit_block(ast);
+    std::mem::take(&mut r.function_signatures)
 }
 
 struct Resolver<D: Dialect> {
     active_variables: Vec<HashMap<String, u64>>,
     active_functions: Vec<HashMap<String, u64>>,
+    function_signatures: HashMap<u64, FunctionSignature>,
     // TODO we should not need that.
     dialect: D,
+}
+
+pub struct FunctionSignature {
+    pub parameters: u64,
+    pub returns: u64,
 }
 
 fn find_symbol(table: &[HashMap<String, u64>], symbol: &String) -> Option<u64> {
@@ -29,6 +39,7 @@ impl<D: Dialect> Resolver<D> {
         Resolver::<D> {
             active_variables: Vec::new(),
             active_functions: Vec::new(),
+            function_signatures: HashMap::new(),
             dialect: D::new(),
         }
     }
@@ -71,6 +82,13 @@ impl<D: Dialect> ASTModifier for Resolver<D> {
                         .last_mut()
                         .unwrap()
                         .insert(f.name.name.clone(), id);
+                    self.function_signatures.insert(
+                        id,
+                        FunctionSignature {
+                            parameters: f.parameters.len() as u64,
+                            returns: f.returns.len() as u64,
+                        },
+                    );
                 } else {
                     panic!()
                 }
